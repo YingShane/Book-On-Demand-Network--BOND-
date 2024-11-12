@@ -1,0 +1,36 @@
+<div class="grid p-fluid">
+  <div class="col-12">
+    <div class="card">
+      <h5>User Information</h5>
+      <form (ngSubmit)="onSubmit()" #userInfoForm="ngForm">
+        <div class="grid formgrid">
+          <div class="col-12 mb-2">
+            <span class="p-float-label">
+              <input id="address" type="text" pInputText [(ngModel)]="user.address" name="address" required />
+              <label for="address">Address</label>
+            </span>
+          </div>
+          <div class="col-12 mb-2">
+            <span class="p-float-label">
+              <input id="age" type="number" pInputText [(ngModel)]="user.age" name="age" required />
+              <label for="age">Age</label>
+            </span>
+          </div>
+          <div class="col-12 mb-2">
+            <span class="p-float-label">
+              <input id="ic" type="number" pInputText [(ngModel)]="user.ic" name="ic" required />
+              <label for="ic">IC</label>
+            </span>
+          </div>
+          <div class="col-12 mb-2">
+            <span class="p-float-label">
+              <input id="phone" type="number" pInputText [(ngModel)]="user.phone_no" name="phone" required />
+              <label for="phone">Phone Number</label>
+            </span>
+          </div>
+        </div>
+        <button pButton label="Submit" type="submit" [disabled]="userInfoForm.invalid"></button>
+      </form>
+    </div>
+  </div>
+</div>

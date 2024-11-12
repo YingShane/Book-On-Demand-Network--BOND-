@@ -1,0 +1,181 @@
+<div class="grid">
+    <!-- Top Section: Admin Information -->
+    <div class="col-12">
+        <div class="card admin-information-card">
+            <h5 class="admin-information-title">User Information</h5>
+            <div class="field">
+                <label class="font-medium">Name</label>
+                <p>{{ user.first_name + ' ' + user.last_name}}</p>
+            </div>
+            <div class="field">
+                <label class="font-medium">Email</label>
+                <p>{{ user.email }}</p>
+            </div>
+            <div class="field">
+                <label class="font-medium">NRIC</label>
+                <p>{{ user.ic }}</p>
+            </div>
+            <div class="field">
+                <label class="font-medium">Address</label>
+                <p>{{ user.address }}</p>
+            </div>
+            <div class="field">
+                <label class="font-medium">Phone Number</label>
+                <p>{{ user.phone_no }}</p>
+            </div>
+            <div class="field">
+                <label class="font-medium">Age</label>
+                <p>{{ user.age }}</p>
+            </div>
+            <div class="flex justify-content-end">
+                <button pButton label="Edit" icon="pi pi-pencil" class="p-button-primary edit-button" (click)="openEditUserDialog()"></button>
+            </div>
+        </div>
+    </div>
+    
+
+    <!-- Bottom Section: Registered Books -->
+    <div class="col-12">
+        <div class="card book-management-card">
+            <h5 class="book-management-title">Manage Registered Books</h5>
+            <p-table [value]="book" [paginator]="true" [rows]="5" responsiveLayout="scroll" class="book-table">
+                <ng-template pTemplate="header">
+                    <tr class="table-header">
+                        <th>Title</th>
+                        <th>Author</th>
+                        <th>Genre</th>
+                        <th>Publisher</th>
+                        <th>Publication Year</th>
+                        <th>Status</th>
+                    </tr>
+                </ng-template>
+                <ng-template pTemplate="body" let-book>
+                    <tr class="book-row" [ngClass]="{'banned-book': book.merit_points === 0}">
+                        <td>{{ book.title }}</td> <!-- Displaying Book Title -->
+                        <td>{{ book.author }}</td> <!-- Displaying Book Author -->
+                        <td>{{ book.genre }}</td> <!-- Displaying Book Summary -->
+                        <td>{{ book.publisher }}</td> <!-- Displaying Book Merits -->
+                        <td>{{ book.publication_year }}</td> <!-- Displaying Book Merits -->
+                        <td>{{ book.status }}</td> <!-- Displaying Book Merits -->
+                        <td>
+                            <button pButton icon="pi pi-pencil" class="p-button-text edit-button" (click)="openEditDialog(book)"></button>
+                            <button pButton icon="pi pi-trash" class="p-button-text delete-button" (click)="deleteBook(book.id)"></button>
+                            <button pButton label="View Details" icon="pi pi-info-circle" class="p-button-text view-books-button" (click)="openViewDialog(book)"></button>
+                        </td>
+                    </tr>
+                </ng-template>
+            </p-table>
+            <div class="flex justify-content-end mt-4">
+                <button pButton label="Add New Book" icon="pi pi-plus" class="p-button-success add-book-button" (click)="openAddBookDialog()"></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<p-dialog header="Add New Book" [(visible)]="displayAddDialog" [modal]="true" [responsive]="true" [style]="{width: '300px'}">
+    <div>
+        <div class="field">
+            <label for="title">Title</label>
+            <input id="title" type="text" [(ngModel)]="newBook.title" required />
+        </div>
+        <div class="field">
+            <label for="author">Author</label>
+            <input id="author" type="text" [(ngModel)]="newBook.author" required />
+        </div>
+        <div class="field">
+            <label for="genre">Genre</label>
+            <input id="genre" type="text" [(ngModel)]="newBook.genre" required />
+        </div>
+        <div class="field">
+            <label for="publisher">Publisher</label>
+            <input id="publisher" type="text" [(ngModel)]="newBook.publisher" required />
+        </div>
+        <div class="field">
+            <label for="publication_year">Publication Year</label>
+            <input id="publication_year" type="number" [(ngModel)]="newBook.publication_year" required />
+        </div>
+    </div>
+    <p-footer>
+        <button pButton label="Submit" icon="pi pi-check" (click)="addBook()"></button>
+        <button pButton label="Cancel" icon="pi pi-times" (click)="displayAddDialog = false"></button>
+    </p-footer>
+</p-dialog>
+
+<p-dialog header="Edit Book" [(visible)]="displayEditDialog" [modal]="true" [responsive]="true" [style]="{width: '300px'}">
+    <div>
+        <div class="field">
+            <label for="title">Title</label>
+            <input id="title" type="text" [(ngModel)]="selectedBook.title" required />
+        </div>
+        <div class="field">
+            <label for="author">Author</label>
+            <input id="author" type="text" [(ngModel)]="selectedBook.author" required />
+        </div>
+        <div class="field">
+            <label for="genre">Genre</label>
+            <input id="genre" type="text" [(ngModel)]="selectedBook.genre" required />
+        </div>
+        <div class="field">
+            <label for="publisher">Publisher</label>
+            <input id="publisher" type="text" [(ngModel)]="selectedBook.publisher" required />
+        </div>
+        <div class="field">
+            <label for="publication_year">Publication Year</label>
+            <input id="publication_year" type="number" [(ngModel)]="selectedBook.publication_year" required />
+        </div>
+    </div>
+    <p-footer>
+        <button pButton label="Update" icon="pi pi-check" (click)="editBook(selectedBook.id)"></button>
+        <button pButton label="Cancel" icon="pi pi-times" (click)="displayEditDialog = false"></button>
+    </p-footer>
+</p-dialog>
+
+<p-dialog header="Book Details" [(visible)]="displayDetailDialog" [modal]="true" [responsive]="true">
+    <div *ngIf="book">
+        <div class="inline-field">
+            <label for="title">Title:</label>
+            <p>{{ selectedBook.title }}</p>
+        </div>
+        <div class="inline-field">
+            <label for="author">Author:</label>
+            <p>{{ selectedBook.author }}</p>
+        </div>
+        <div class="inline-field">
+            <label for="genre">Genre:</label>
+            <p>{{ selectedBook.genre }}</p>
+        </div>
+        <div class="inline-field">
+            <label for="publisher">Publisher:</label>
+            <p>{{ selectedBook.publisher }}</p>
+        </div>
+        <div class="inline-field">
+            <label for="publication_year">Publication Year:</label>
+            <p>{{ selectedBook.publication_year }}</p>
+        </div>
+    </div>
+    <p-footer>
+        <button pButton label="Close" icon="pi pi-times" (click)="displayDetailDialog = false"></button>
+    </p-footer>
+</p-dialog>
+
+<p-dialog header="Edit User Information" [(visible)]="displayEditUserDialog" [modal]="true" [responsive]="true" [style]="{width: '400px'}">
+    <div *ngIf="editableUser">
+        <div class="field">
+            <label for="firstName">First Name</label>
+            <input pInputText id="firstName" [(ngModel)]="editableUser.first_name" />
+        </div>
+        <div class="field">
+            <label for="lastName">Last Name</label>
+            <input pInputText id="lastName" [(ngModel)]="editableUser.last_name" />
+        </div>
+        <div class="field">
+            <label for="email">Email</label>
+            <input pInputText id="email" [(ngModel)]="editableUser.email" />
+        </div>
+        <!-- Add other fields in similar fashion -->
+    </div>
+    <p-footer>
+        <button pButton label="Save" icon="pi pi-check" (click)="saveUserInfo()"></button>
+        <button pButton label="Cancel" icon="pi pi-times" (click)="displayEditUserDialog = false"></button>
+    </p-footer>
+</p-dialog>

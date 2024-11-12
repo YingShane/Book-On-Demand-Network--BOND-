@@ -1,0 +1,5 @@
+.actions-column .action-buttons {
+	display: flex;
+	gap: 0.5rem; /* Space between the buttons */
+	align-items: center;
+}
