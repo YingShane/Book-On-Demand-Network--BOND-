@@ -433,6 +433,58 @@ app.get('/api/user-address', async (req, res) => {
   }
 })
 
+app.get('/api/user-info-address', async (req, res) => {
+  console.log(req.query);
+  const address = req.query.address;
+
+  console.log(address)
+
+  if (!address) {
+    return res.status(400).json({ error: 'Address is required' });
+  }
+
+  try {
+    // Query Supabase to match the `address` column in `profiles` table
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('address', address);
+
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+
+    if (data.length === 0) {
+      return res.status(404).json({ error: 'User not found for the provided address' });
+    }
+
+    res.json(data[0]); // Return the first matching user profile
+  } catch (err) {
+    res.status(500).json({ error: 'An error occurred while fetching user info' });
+  }
+});
 
 
+app.get('/api/books-available/:id', async (req, res) => {
+  try {
+      // Query Supabase for books with status 'available'
+      const userId = req.params.id;
+      console.log(userId)
+      const { data, error } = await supabase
+          .from('profile_books_testing')
+          .select('*')
+          .eq('status', 'available')
+          .eq('user_id', userId); 
+
+      console.log(data)
+
+      if (error) {
+          return res.status(500).json({ error: error.message });
+      }
+
+      res.json(data);
+  } catch (error) {
+      res.status(500).json({ error: 'An error occurred while retrieving books' });
+  }
+});
 

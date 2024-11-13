@@ -1,58 +1,52 @@
 import { Component, OnInit } from '@angular/core';
 import { SelectItem } from 'primeng/api';
-import { DataView } from 'primeng/dataview';
-import { Product } from 'src/app/demo/api/product';
-import { ProductService } from 'src/app/demo/service/product.service';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../../../environments/environment';
+import { ActivatedRoute } from '@angular/router';
 
 @Component({
     templateUrl: './listdemo.component.html'
 })
 export class ListDemoComponent implements OnInit {
 
-    products: Product[] = [];
-
+    books: any[] = [];
+    apiUrl = environment.apiUrl;
+    userId: string | null = null;
     sortOptions: SelectItem[] = [];
 
     sortOrder: number = 0;
 
     sortField: string = '';
 
-    sourceCities: any[] = [];
+    constructor(private http: HttpClient, private route: ActivatedRoute) { }
 
-    targetCities: any[] = [];
+    ngOnInit(): void {
+        // Access userId from the route
+        this.route.paramMap.subscribe(params => {
 
-    orderCities: any[] = [];
-
-    constructor(private productService: ProductService) { }
-
-    ngOnInit() {
-        this.productService.getProducts().then(data => this.products = data);
-
-        this.sourceCities = [
-            { name: 'San Francisco', code: 'SF' },
-            { name: 'London', code: 'LDN' },
-            { name: 'Paris', code: 'PRS' },
-            { name: 'Istanbul', code: 'IST' },
-            { name: 'Berlin', code: 'BRL' },
-            { name: 'Barcelona', code: 'BRC' },
-            { name: 'Rome', code: 'RM' }];
-
-        this.targetCities = [];
-
-        this.orderCities = [
-            { name: 'San Francisco', code: 'SF' },
-            { name: 'London', code: 'LDN' },
-            { name: 'Paris', code: 'PRS' },
-            { name: 'Istanbul', code: 'IST' },
-            { name: 'Berlin', code: 'BRL' },
-            { name: 'Barcelona', code: 'BRC' },
-            { name: 'Rome', code: 'RM' }];
-
+          this.userId = params.get('id');
+          console.log('User ID:', this.userId);
+          
+          // Optionally, fetch data for this user if needed
+          if (this.userId) {
+            this.http.get<any[]>(`${this.apiUrl}/books-available/${this.userId}`).subscribe(data => {
+              this.books = data;
+              console.log(this.books);
+            });
+          } else {
+            // If userId is not available, fetch books without the user filter
+            this.http.get<any[]>(`${this.apiUrl}/books-available`).subscribe(data => {
+              this.books = data;
+              console.log(this.books);
+            });
+          }
+        });
+    
         this.sortOptions = [
-            { label: 'Price High to Low', value: '!price' },
-            { label: 'Price Low to High', value: 'price' }
+          { label: 'Title Ascending', value: 'title' },
+          { label: 'Title Descending', value: '!title' }
         ];
-    }
+      }
 
     onSortChange(event: any) {
         const value = event.value;
@@ -66,8 +60,7 @@ export class ListDemoComponent implements OnInit {
         }
     }
 
-    onFilter(dv: DataView, event: Event) {
+    onFilter(dv: any, event: Event) {
         dv.filter((event.target as HTMLInputElement).value);
     }
-    
 }

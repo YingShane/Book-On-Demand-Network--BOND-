@@ -1,6 +1,19 @@
 <div id="map" style="height: 100vh;"></div> <!-- Full screen map container -->
 <button id="recenterButton" style="position: absolute; bottom: 30px; right: 30px; padding: 10px; background-color: #FF5733; color: white; border: none; border-radius: 5px; cursor: pointer; z-index: 10;">Recenter Map</button>
+<label for="filterType" style="position: absolute; bottom: 100px; right: 200px;">Filter by:</label>
+<select id="filterType" style="position: absolute; bottom: 80px; right: 200px;">
+    <option value="time">Time (Minutes)</option>
+    <option value="distance">Distance (Meters)</option>
+</select>
+
+<!-- Time Radius Slider -->
+<label for="timeRadius" style="position: absolute; bottom: 60px; right: 200px;">Set time radius (in minutes):</label>
+<input type="range" id="timeRadius" min="5" max="60" value="10" style="position: absolute; bottom: 40px; right: 200px;">
+<span id="timeRadiusValue" style="position: absolute; bottom: 20px; right: 200px;">10</span> minutes
+
+<!-- Distance Radius Slider -->
+<label for="distanceRadius">Set distance radius (in meters):</label>
+<input type="range" id="distanceRadius" min="500" max="10000" value="500">
+<span id="distanceRadiusValue">500</span> meters
 
 
-<!-- <p class="hi">HII</p>
-<div class="hello">HELLO</div> -->

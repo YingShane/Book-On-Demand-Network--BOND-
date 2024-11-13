@@ -20,6 +20,8 @@ const routes: Routes = [
             { path: 'pages', loadChildren: () => import('./demo/components/pages/pages.module').then(m => m.PagesModule) },    
             { path: 'dashboard', loadChildren: () => import('./demo/components/dashboard/dashboard.module').then(m => m.DashboardModule) },
             { path: 'map-common', component: MapCommonComponent }, // Use component instead of loadChildren
+            { path: 'list/:id', loadChildren: () => import('./demo/components/uikit/list/listdemo.module').then(m => m.ListDemoModule) },
+
         ]
     },
     { path: 'add-user-info', loadChildren: () => import('./demo/components/add-user-info/add-user-info.module').then(m => m.AddUserInfoModule) },
