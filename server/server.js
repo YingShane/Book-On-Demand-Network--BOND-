@@ -182,7 +182,7 @@ app.delete('/api/deleteBook/:id', async (req, res) => {
 app.put('/api/editBook/:id', async (req, res) => {
   const id = req.params.id;
   const { title, author, genre, publisher, publication_year } = req.body; // Expecting these fields from the client
-  console.log(title, author, genre, publisher, publication_year)
+
   try {
       const { data, error } = await supabase
           .from('books')
@@ -269,7 +269,6 @@ app.post('/api/login', async (req, res) => {
   try {
     const { user, error } = await supabase.auth.signInWithPassword({ email, password });
     const { data: existingUser, error: getUserError } = await supabase.auth.getUser();
-    console.log('Supabase response:', { existingUser, error });
     const userId = existingUser.user.user_metadata.sub; // Access the sub field
 
     const { data: userData, error: fetchError } = await supabase
@@ -363,8 +362,6 @@ app.post('/api/register', async (req, res) => {
   app.post('/api/borrow', async (req, res) => {
     const { bookId } = req.body;
     const { data: { user }, error: errorUser } = await supabase.auth.getUser();
-    console.log(bookId);
-
     if (errorUser || !user) {
         return res.status(401).json({ error: 'User not authenticated.' });
     }
@@ -405,8 +402,36 @@ app.post('/api/register', async (req, res) => {
     }
 });
 
+app.get('/api/address', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .neq('address', null);  // Filter where address is not NULL
 
+    if (error) throw error;
 
+    res.json(data);
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+});
+
+app.get('/api/user-address', async (req, res) => {
+  try {
+    const { data: { user }, error: errorUser } = await supabase.auth.getUser();
+    const { data, error }  = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id);
+
+    if (error) throw error;
+    res.json(data);
+
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+})
 
 
 

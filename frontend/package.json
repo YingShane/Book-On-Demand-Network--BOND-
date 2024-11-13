@@ -28,6 +28,7 @@
         "@fullcalendar/interaction": "^6.0.3",
         "@fullcalendar/timegrid": "^6.0.3",
         "@supabase/supabase-js": "^2.45.4",
+        "@turf/turf": "^7.1.0",
         "@types/mapbox-gl": "^3.4.1",
         "chart.js": "^3.3.2",
         "mapbox-gl": "^3.7.0",
