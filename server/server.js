@@ -20,9 +20,7 @@ app.use(express.json());
 // Route to get admin information
 app.get('/api/dashboard', async (req, res) => {
     try {
-        const { data, error } = await supabase
-            .from('profiles')
-            .select('*');
+        const { data, error } = await supabase.auth.getUser();
 
         if (error) throw error;
 
@@ -246,14 +244,14 @@ app.put('/api/update-profile/:book_id', async (req, res) => {
 });
 
 app.put('/api/update-user-profile/:user_id', async (req, res) => {
-  const user_id = req.params.user_id; // Get book_id from URL parameters
+  const user_id = req.params.user_id; 
   const { address, age, ic, phone_no } = req.body; // Get data from the request body
 
   // Update the book profile in the Supabase table
   const { data, error } = await supabase
-    .from('profiles') // Change 'book_profiles' to your actual table name
-    .update({ address, age, ic, phone_no }) // Update the relevant fields
-    .eq('id', user_id); // Use the book_id from the URL
+    .from('profiles')
+    .update({ address, age, ic, phone_no }) 
+    .eq('id', user_id); 
 
   if (error) {
     console.error('Error updating profile:', error);

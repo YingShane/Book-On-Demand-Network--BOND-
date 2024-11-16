@@ -39,8 +39,9 @@ export class AddUserInfoComponent implements OnInit {
   }
 
   onSubmit() {
+    console.log(this.existingUser);
       this.user = {
-        user_id: this.existingUser[0].id,
+        user_id: this.existingUser.user.id,
         address: this.user.address, // Assuming this holds the new address
         age: this.user.age,
         ic: this.user.ic,
