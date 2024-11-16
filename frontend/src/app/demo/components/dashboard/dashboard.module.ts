@@ -13,6 +13,7 @@ import { MessageService } from 'primeng/api';
 import { MessageModule } from 'primeng/message';
 import { ToastModule } from 'primeng/toast'; 
 import { DialogModule } from 'primeng/dialog';
+import { MapCommonComponent } from 'src/app/map-common/map-common.component';
 
 @NgModule({
     imports: [
@@ -27,7 +28,8 @@ import { DialogModule } from 'primeng/dialog';
         DashboardsRoutingModule,
         MessageModule,
         ToastModule, 
-        DialogModule
+        DialogModule,
+        MapCommonComponent
     ],
     declarations: [DashboardComponent],
     providers: [MessageService]

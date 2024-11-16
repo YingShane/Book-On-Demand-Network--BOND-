@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { MenuItem } from 'primeng/api';
 import { Product } from '../../api/product';
 import { ProductService } from '../../service/product.service';
@@ -8,6 +8,7 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import { MessageService } from 'primeng/api';
 import { Observable } from 'rxjs'; 
+import { MapCommonComponent } from 'src/app/map-common/map-common.component';
 
 @Component({
     templateUrl: './dashboard.component.html',
@@ -15,6 +16,8 @@ import { Observable } from 'rxjs';
     providers: [MessageService]
 })
 export class DashboardComponent implements OnInit, OnDestroy {
+    @ViewChild(MapCommonComponent) mapCommon: MapCommonComponent;
+
     apiUrl = environment.apiUrl;
     displayAddDialog: boolean = false; 
     displayEditDialog: boolean = false;
@@ -29,6 +32,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
         email: 'yeousm@student.usm.my',
         status: 'Active'
     };
+    markerSet: boolean = false;
+    markers: Map<string, mapboxgl.Marker> = new Map();
 
     displayEditUserDialog: boolean = false;
     editableUser: any = {};
@@ -44,6 +49,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
     chartOptions: any;
 
     subscription!: Subscription;
+
+    addBookStage: number = 1; // 1 for form, 2 for map
+    searchQuery: string = '';
 
     constructor(private productService: ProductService, public layoutService: LayoutService, private http: HttpClient, private messageService: MessageService ) {
         this.subscription = this.layoutService.configUpdate$
@@ -145,7 +153,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
     //Manage Books
     async addBook() {
         try {
-            const response = await this.http.post(`${this.apiUrl}/newBook`, this.newBook).toPromise();
+            const meetingLocation = this.searchQuery;  // Assuming the meeting location is the address entered
+    
+            // Include meeting_location in the data sent to the backend
+            const response = await this.http.post(`${this.apiUrl}/newBook`, { 
+                ...this.newBook,  // Include the rest of the book data
+                meeting_location: meetingLocation 
+            }).toPromise();
             
             // Ensure that the response is what you expect
             if (response) {
@@ -160,6 +174,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
             this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to add book: ' + (error.message || 'Unknown error') });
         }
     }
+    
 
     async deleteBook(bookId: string) {
         try {
@@ -253,6 +268,91 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
 
       }
+
+
+    
+    // Method to move to map stage
+    proceedToMap() {
+        if (this.isFormValid()) {
+            this.addBookStage = 2;
+        } else {
+            alert("Please fill all required fields!");
+        }
+    }
+
+    // Method to validate the form
+    isFormValid(): boolean {
+        return this.newBook.title && this.newBook.author && this.newBook.genre &&
+            this.newBook.publisher && this.newBook.publication_year;
+    }
+
+    // Method to go back to the form stage
+    goBackToDetails() {
+        this.addBookStage = 1;
+    }
+
+    // Method to finalize the book addition
+    submitBookWithLocation() {
+        const mapInstance = document.getElementById('map');
+        const selectedCoordinates = this.getSelectedCoordinatesFromMap(mapInstance); // Define this logic
+        if (selectedCoordinates) {
+            this.newBook.location = this.convertCoordinatesToAddress(selectedCoordinates);
+            this.addBook();
+            this.displayAddDialog = false;
+            this.resetAddBookDialog();
+        } else {
+            alert("Please select a location on the map.");
+        }
+    }
+
+    // Reset the dialog state after closing
+    resetAddBookDialog() {
+        this.addBookStage = 1;
+        this.newBook = {
+            title: '',
+            author: '',
+            genre: '',
+            publisher: '',
+            publication_year: null,
+            location: ''
+        };
+    }
+
+    // Placeholder for converting coordinates to address
+    convertCoordinatesToAddress(coordinates: any): string {
+        // Use a geocoding service API to convert coordinates to address
+        return `Lat: ${coordinates.lat}, Lng: ${coordinates.lng}`;
+    }
+
+    // Placeholder for getting selected coordinates from the map
+    getSelectedCoordinatesFromMap(mapInstance: any): any {
+        // Implement the logic to fetch the selected coordinates from the map instance
+        return { lat: 1.2345, lng: 103.6789 }; // Example coordinates
+    }
+
+    searchLocation(): void {
+        if (this.searchQuery) {
+          this.mapCommon.goToAddress(this.searchQuery);
+        }
+    }
+
+    toggleMarker(): void {
+        if (!this.searchQuery.trim()) {
+          console.error('Please enter a valid address.');
+          return;
+        }
+    
+        if (this.markerSet) {
+          // Remove the marker
+          this.mapCommon.removeMarker(this.searchQuery);
+          this.markerSet = false;
+        } else {
+          // Set the marker
+          this.mapCommon.setMarkerAtAddress(this.searchQuery);
+          this.markerSet = true;
+        }
+      }
+
 
     showSuccess() {
         this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Book added successfully!' });

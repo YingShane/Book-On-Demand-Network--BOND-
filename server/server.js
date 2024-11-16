@@ -98,7 +98,7 @@ app.listen(port, () => {
 
 // Route to add a new user
 app.post('/api/newBook', async (req, res) => {
-  const { title, author, genre, publisher, publication_year } = req.body;
+  const { title, author, genre, publisher, publication_year, meeting_location } = req.body;
   const { data: { user }, error: errorUser } = await supabase.auth.getUser();
    
   try {
@@ -125,6 +125,7 @@ app.post('/api/newBook', async (req, res) => {
         throw error;
       }
 
+
       // Step 4: Insert a copy into `public_books` table
       const { data: dataCopy, error: errorCopy } = await supabase
           .from('profile_books_testing')
@@ -135,7 +136,8 @@ app.post('/api/newBook', async (req, res) => {
               genre, 
               publisher, 
               publication_year,
-              status: 'available'
+              status: 'available',
+              meeting_location
           }]);
 
       if (errorCopy) {
@@ -483,6 +485,32 @@ app.get('/api/books-available/:id', async (req, res) => {
       res.json(data);
   } catch (error) {
       res.status(500).json({ error: 'An error occurred while retrieving books' });
+  }
+});
+
+
+app.post('/api/update-location', async (req, res) => {
+  const { address, userId } = req.body;
+
+  if (!address || !userId) {
+    return res.status(400).json({ error: 'Address and userId are required' });
+  }
+
+  try {
+    // Update the meeting_location column in profile_books_testing table
+    const { data, error } = await supabase
+      .from('profile_books_testing')
+      .update({ meeting_location: address })
+      .eq('user_id', userId);
+
+    if (error) {
+      throw error;
+    }
+
+    res.status(200).json({ message: 'Location updated successfully', data });
+  } catch (error) {
+    console.error('Error updating location:', error);
+    res.status(500).json({ error: 'Failed to update location' });
   }
 });
 

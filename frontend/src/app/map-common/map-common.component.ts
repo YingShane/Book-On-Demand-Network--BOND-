@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { AfterViewInit, Component, OnInit } from '@angular/core';
 import * as mapboxgl from 'mapbox-gl';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
@@ -13,7 +13,7 @@ import * as turf from '@turf/turf';
   styleUrls: ['./map-common.component.css'],
   providers: [MessageService]
 })
-export class MapCommonComponent implements OnInit {
+export class MapCommonComponent implements AfterViewInit {
   map: mapboxgl.Map;
   address: string = '';
   apiUrl = environment.apiUrl;
@@ -21,29 +21,47 @@ export class MapCommonComponent implements OnInit {
   currentUserAddress: any;
   distance: any;
   userInfoByAddress: any;
-
+  markers: Map<string, mapboxgl.Marker> = new Map();
 
   constructor(private http: HttpClient, private router: Router,  private messageService: MessageService) {}
-
-  ngOnInit(): void {
-    (mapboxgl as any).accessToken = 'pk.eyJ1IjoieWVvMzMxNiIsImEiOiJjbTNjc3ExemwxdTJ0MmlzYzQzZm43MmgyIn0.2qA9Z9Og0SHrgBsjxfvbvg';
-    this.map = new mapboxgl.Map({
-      container: 'map', // container ID
-      style: 'mapbox://styles/mapbox/streets-v12', // style URL
-      center: [-74.5, 40], // starting position [lng, lat]
-      zoom: 9, // starting zoom 
-    });
-
-    Promise.all([this.fetchUserAddressData(), this.fetchAllAddressData(), this.setupRecenterButton()])
-    .then(() => {
-      // Once both methods are complete, add the distance layer
-      this.addDistanceLayer();
+  async ngAfterViewInit(): Promise<void> {
+    try {
+      // Set up the Mapbox access token
+      (mapboxgl as any).accessToken = 'pk.eyJ1IjoieWVvMzMxNiIsImEiOiJjbTNjc3ExemwxdTJ0MmlzYzQzZm43MmgyIn0.2qA9Z9Og0SHrgBsjxfvbvg';
+  
+      // Initialize the map
+      this.map = new mapboxgl.Map({
+        container: 'map', // container ID
+        style: 'mapbox://styles/mapbox/streets-v12', // style URL
+        center: [-74.5, 40], // starting position [lng, lat]
+        zoom: 9, // starting zoom
+      });
+  
+      // Wait for the map to be fully loaded before proceeding
+      await new Promise<void>((resolve) => {
+        this.map.on('load', () => {
+          console.log('Map is fully loaded!');
+          resolve(); // Resolve the promise once the map is loaded
+        });
+      });
+  
+      // Fetch user address data first
+      await this.fetchUserAddressData();
+  
+      // Then, fetch all address data
+      await this.fetchAllAddressData();
+  
+      // After both data fetching operations, add the layers
       this.addIsochroneLayer();
-    })
-    .catch((error) => {
-      console.error('Error executing fetch operations:', error);
-    });
+      this.addDistanceLayer();
+      this.setupRecenterButton();
+  
+    } catch (error) {
+      console.error('Error during map setup or data fetching:', error);
+    }
   }
+  
+  
 
   async goToAddress(address: string) {
     try {
@@ -68,43 +86,65 @@ export class MapCommonComponent implements OnInit {
   }
   
 
-  async setMarkerAtAddress(address: string) {
-    const response = await fetch(
+  setMarkerAtAddress(address: string): void {
+    // Fetch geocoding data from Mapbox API
+    fetch(
       `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=pk.eyJ1IjoieWVvMzMxNiIsImEiOiJjbTNjc3ExemwxdTJ0MmlzYzQzZm43MmgyIn0.2qA9Z9Og0SHrgBsjxfvbvg`
-    );
-    const data = await response.json();
-    if (data.features.length > 0) {
-      const [longitude, latitude] = data.features[0].center;
-      
-      // Check if the current address is the user's address
-      if (address === this.currentUserAddress[0].address) {
-        const marker = new mapboxgl.Marker({color: 'red'})
-        .setLngLat([longitude, latitude])
-        .addTo(this.map);
-        // Create a popup with the label "You're Here"
-        const popup = new mapboxgl.Popup({ offset: 25 })
-          .setLngLat([longitude, latitude])
-          .setHTML("<strong>You're Here</strong>")
-          .addTo(this.map);
+    )
+    .then((response) => response.json())  // Parse JSON data
+    .then((data) => {
+      if (data.features.length > 0) {
+        const [longitude, latitude] = data.features[0].center;
   
-        // Attach the popup to the marker
-        marker.setPopup(popup);
-        marker.getElement().addEventListener('click', () => {
-          this.handleMarkerClick(address, [longitude, latitude])
-        });
-      } else {
-        const marker = new mapboxgl.Marker()
-        .setLngLat([longitude, latitude])
-        .addTo(this.map);
+        // Function to create and add marker with popup
+        const addMarker = (markerColor: string, popupContent?: string) => {
+          const marker = new mapboxgl.Marker({ color: markerColor })
+            .setLngLat([longitude, latitude])
+            .addTo(this.map);
 
-        marker.getElement().addEventListener('click', () => {
-          this.handleMarkerClick(address, [longitude, latitude])
-        });
+          this.markers.set(address, marker);
+  
+          // Create and attach the popup
+          if (popupContent) {
+            const popup = new mapboxgl.Popup({ offset: 25 })
+              .setLngLat([longitude, latitude])
+              .setHTML(popupContent)
+              .addTo(this.map);
+            marker.setPopup(popup);
+          }
+  
+          // Attach click event
+          marker.getElement().addEventListener('click', () => {
+            this.handleMarkerClick(address, [longitude, latitude]);
+          });
+        };
+  
+        // Check if this is the user's current address
+        if (address === this.currentUserAddress[0]?.address) {
+          addMarker('red', "<strong>You're Here</strong>");
+        } else {
+          addMarker('blue');
+        }
+  
+      } else {
+        console.error('Address not found');
       }
+    })
+    .catch((error) => {
+      console.error('Error fetching address data:', error);
+    });
+  }
+
+  removeMarker(address: string): void {
+    const marker = this.markers.get(address); // Get the marker for the address
+    if (marker) {
+      marker.remove(); // Remove the marker from the map
+      this.markers.delete(address); // Remove the marker from the Map
     } else {
-      console.error('Address not found');
+      console.error(`No marker found for address: ${address}`);
     }
   }
+  
 
   async handleMarkerClick(address: string, coordinates: [number, number]): Promise<void> {
     try {

@@ -72,34 +72,82 @@
     </div>
 </div>
 
-<p-dialog header="Add New Book" [(visible)]="displayAddDialog" [modal]="true" [responsive]="true" [style]="{width: '300px'}">
-    <div>
-        <div class="field">
+<p-dialog 
+    *ngIf="addBookStage === 1"
+    header="Add New Book" 
+    [(visible)]="displayAddDialog" 
+    [modal]="true" 
+    [responsive]="true" 
+    [style]="{width: '300px', height: '500px'}">
+    
+    <!-- First Stage: Book Details Form -->
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
+        <div class="field" style="width: 100%; max-width: 250px;">
             <label for="title">Title</label>
-            <input id="title" type="text" [(ngModel)]="newBook.title" required />
+            <input id="title" type="text" [(ngModel)]="newBook.title" required style="width: 100%;" />
         </div>
-        <div class="field">
+        <div class="field" style="width: 100%; max-width: 250px;">
             <label for="author">Author</label>
-            <input id="author" type="text" [(ngModel)]="newBook.author" required />
+            <input id="author" type="text" [(ngModel)]="newBook.author" required style="width: 100%;" />
         </div>
-        <div class="field">
+        <div class="field" style="width: 100%; max-width: 250px;">
             <label for="genre">Genre</label>
-            <input id="genre" type="text" [(ngModel)]="newBook.genre" required />
+            <input id="genre" type="text" [(ngModel)]="newBook.genre" required style="width: 100%;" />
         </div>
-        <div class="field">
+        <div class="field" style="width: 100%; max-width: 250px;">
             <label for="publisher">Publisher</label>
-            <input id="publisher" type="text" [(ngModel)]="newBook.publisher" required />
+            <input id="publisher" type="text" [(ngModel)]="newBook.publisher" required style="width: 100%;" />
         </div>
-        <div class="field">
+        <div class="field" style="width: 100%; max-width: 250px;">
             <label for="publication_year">Publication Year</label>
-            <input id="publication_year" type="number" [(ngModel)]="newBook.publication_year" required />
+            <input id="publication_year" type="number" [(ngModel)]="newBook.publication_year" required style="width: 100%;" />
         </div>
     </div>
     <p-footer>
-        <button pButton label="Submit" icon="pi pi-check" (click)="addBook()"></button>
+        <button pButton label="Next" icon="pi pi-arrow-right" (click)="proceedToMap()"></button>
         <button pButton label="Cancel" icon="pi pi-times" (click)="displayAddDialog = false"></button>
     </p-footer>
 </p-dialog>
+
+<!-- Dialog for Stage 2 -->
+<p-dialog 
+    *ngIf="addBookStage === 2"
+    header="Add New Book" 
+    [(visible)]="displayAddDialog" 
+    [modal]="true" 
+    [responsive]="true" 
+    [style]="{width: '1300px', height: '1000px'}">
+    
+    <!-- Search Bar Section -->
+    <div style="padding: 10px;">
+        <input 
+            type="text" 
+            pInputText 
+            [(ngModel)]="searchQuery" 
+            placeholder="Search for a location..." 
+            (keyup.enter)="searchLocation()"
+            style="width: 300px; z-index: 999; position: relative;" />
+        
+        <button 
+            pButton 
+            [label]="markerSet ? 'Remove Marker' : 'Set Marker'" 
+            (click)="toggleMarker()" 
+            style="margin-left: 10px; position: 'relative'; z-index: 999;"></button>
+    </div>
+    
+    <!-- Second Stage: Map Selection -->
+    <div id="map-container" style="height: 100%; display: flex; flex-direction: column;">
+        <app-map-common #mapCommon style="flex: 1;"></app-map-common>
+    </div>
+    
+    <p-footer>
+        <button pButton label="Submit" icon="pi pi-check" (click)="submitBookWithLocation()"></button>
+        <button pButton label="Back" icon="pi pi-arrow-left" (click)="goBackToDetails()"></button>
+    </p-footer>
+</p-dialog>
+
+
+
 
 <p-dialog header="Edit Book" [(visible)]="displayEditDialog" [modal]="true" [responsive]="true" [style]="{width: '300px'}">
     <div>
