@@ -98,7 +98,7 @@ app.listen(port, () => {
 
 // Route to add a new user
 app.post('/api/newBook', async (req, res) => {
-  const { title, author, genre, publisher, publication_year, meeting_location } = req.body;
+  const { title, author, genre, publisher, publication_year, meeting_location, meeting_coordinates } = req.body;
   const { data: { user }, error: errorUser } = await supabase.auth.getUser();
    
   try {
@@ -117,7 +117,9 @@ app.post('/api/newBook', async (req, res) => {
               genre, 
               publisher, 
               publication_year,
-              status: 'available'
+              status: 'available',
+              meeting_location,
+              meeting_coordinates
           }]);
 
       if (error) {
@@ -137,7 +139,8 @@ app.post('/api/newBook', async (req, res) => {
               publisher, 
               publication_year,
               status: 'available',
-              meeting_location
+              meeting_location,
+              meeting_coordinates
           }]);
 
       if (errorCopy) {
@@ -181,19 +184,19 @@ app.delete('/api/deleteBook/:id', async (req, res) => {
 
 app.put('/api/editBook/:id', async (req, res) => {
   const id = req.params.id;
-  const { title, author, genre, publisher, publication_year } = req.body; // Expecting these fields from the client
+  const { title, author, genre, publisher, publication_year, meeting_location, meeting_coordinates } = req.body; // Expecting these fields from the client
 
   try {
       const { data, error } = await supabase
           .from('books')
-          .update({ title, author, genre, publisher, publication_year })
+          .update({ title, author, genre, publisher, publication_year, meeting_location, meeting_coordinates })
           .eq('id', id); // Assuming 'id' is the primary key
 
       if (error) throw error;
 
       const { dataCopy, errorCopy } = await supabase
           .from('profile_books_testing')
-          .update({ title, author, genre, publisher, publication_year })
+          .update({ title, author, genre, publisher, publication_year, meeting_location, meeting_coordinates })
           .eq('id', id); 
 
       if (errorCopy) throw errorCopy;
@@ -433,11 +436,49 @@ app.get('/api/user-address', async (req, res) => {
   }
 })
 
-app.get('/api/user-info-address', async (req, res) => {
-  console.log(req.query);
-  const address = req.query.address;
+app.get('/api/meeting-location', async (req, res) => {
+  try {
+    const { data: { user }, error: errorUser } = await supabase.auth.getUser();
+    const { data, error }  = await supabase
+      .from('books')
+      .select('meeting_location')
+      .eq('user_id', user.id);
 
-  console.log(address)
+    if (error) throw error;
+    res.json(data);
+
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+})
+
+app.get('/api/all-meeting-locations', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('profile_books_testing')
+      .select('meeting_location');  // Get the meeting_location field
+
+    if (error) throw error;
+
+    // Filter out any null values in meeting_location
+    const validMeetingLocations = data.filter(location => location.meeting_location !== null)
+                                      .map(location => location.meeting_location);
+
+    console.log("Valid Meeting Locations: ", validMeetingLocations);
+    
+    // Send the filtered list of valid meeting locations as the response
+    res.json({ meeting_locations: validMeetingLocations });
+
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+});
+
+
+
+app.get('/api/user-info-address', async (req, res) => {
+
+  const address = req.query.address;
 
   if (!address) {
     return res.status(400).json({ error: 'Address is required' });
@@ -469,14 +510,14 @@ app.get('/api/books-available/:id', async (req, res) => {
   try {
       // Query Supabase for books with status 'available'
       const userId = req.params.id;
-      console.log(userId)
+
       const { data, error } = await supabase
           .from('profile_books_testing')
           .select('*')
           .eq('status', 'available')
           .eq('user_id', userId); 
 
-      console.log(data)
+
 
       if (error) {
           return res.status(500).json({ error: error.message });

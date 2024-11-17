@@ -1,4 +1,18 @@
-<div id="map" style="height: 100%;"></div> <!-- Full screen map container -->
+<div id="map" style="height: 100%;"></div>
+<input 
+  type="text" 
+  pInputText 
+  [(ngModel)]="searchQuery" 
+  placeholder="Search for a location..." 
+  (keyup.enter)="searchLocation()"
+  style="position: absolute; top: 100px; right: 20px; padding: 10px; border-radius: 5px; z-index: 10; width: 250px; border: 1px solid #ccc;" />
+<button
+  id="searchButton"
+  (click)="searchLocation()"
+  style="position: absolute; top: 100px; right: 280px; padding: 10px; background-color: #FF5733; color: white; border: none; border-radius: 5px; cursor: pointer; z-index: 10;">
+  Search
+</button>
+
 <button id="recenterButton" style="position: absolute; bottom: 80px; right: 30px; padding: 10px; background-color: #FF5733; color: white; border: none; border-radius: 5px; cursor: pointer; z-index: 10;">Recenter Map</button>
 <!-- <label for="filterType" style="position: absolute; bottom: 100px; right: 200px;">Filter by:</label>
 <select id="filterType" style="position: absolute; bottom: 80px; right: 200px;">

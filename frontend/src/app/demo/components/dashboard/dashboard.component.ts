@@ -51,6 +51,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     subscription!: Subscription;
 
     addBookStage: number = 1; // 1 for form, 2 for map
+    editBookStage: number = 1;
     searchQuery: string = '';
 
     constructor(private productService: ProductService, public layoutService: LayoutService, private http: HttpClient, private messageService: MessageService ) {
@@ -136,6 +137,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         try {
             const response = await this.http.get(`${this.apiUrl}/books`).toPromise(); 
             this.book = response; // Assign the fetched data to the data property
+            console.log(this.book)
         } catch (error) {
             console.error('Error fetching book data:', error);
         }
@@ -153,12 +155,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
     //Manage Books
     async addBook() {
         try {
-            const meetingLocation = this.searchQuery;  // Assuming the meeting location is the address entered
-    
+            const meetingCoordinates = await this.mapCommon.getCoordinatesFromAddress(this.searchQuery);
+            const meetingLocation = this.searchQuery; 
+            const [longitude, latitude] = meetingCoordinates; 
+
             // Include meeting_location in the data sent to the backend
             const response = await this.http.post(`${this.apiUrl}/newBook`, { 
                 ...this.newBook,  // Include the rest of the book data
-                meeting_location: meetingLocation 
+                meeting_location: meetingLocation ,
+                meeting_coordinates: [longitude, latitude]
             }).toPromise();
             
             // Ensure that the response is what you expect
@@ -190,23 +195,84 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }    
     
     async editBook(bookId: string) {
-      try {
-        const response = await this.http.put(`${this.apiUrl}/editBook/${bookId}`, this.selectedBook).toPromise();
-        this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Book updated successfully!' });
+        try {
+            
+            const meetingCoordinates = await this.mapCommon.getCoordinatesFromAddress(this.searchQuery);
+            const meetingLocation = this.searchQuery; 
+            const [longitude, latitude] = meetingCoordinates; // Destructure after awaiting the promise
 
-        // Update the local book array
-        const index = this.book.findIndex(book => book.id === bookId);
-        if (index !== -1) {
-          this.book[index] = response; // Assuming the response returns the updated book
+            const response = await this.http.put(`${this.apiUrl}/editBook/${bookId}`, { 
+                ...this.selectedBook,  // Include the rest of the book data
+                meeting_location: meetingLocation ,
+                meeting_coordinates: [longitude, latitude]
+            }).toPromise();
+            
+            // Ensure that the response is what you expect
+            if (response) {
+                // Update local book array with the updated book
+                const index = this.book.findIndex(book => book.id === bookId);
+                if (index !== -1) {
+                    this.book[index] = response; // Update with the response data
+                }
+                this.messageService.add({ 
+                    severity: 'success', 
+                    summary: 'Success', 
+                    detail: 'Book updated successfully!' 
+                });
+            }
+        
+            this.displayEditDialog = false; // Close the dialog
+            this.fetchBooksData(); // Refresh the book data
+            
+            this.messageService.add({ severity: 'success', summary: 'Location Found', detail: 'Location updated on map!' });
+        
+            
+            
+        } catch (error) {
+            console.error('Error updating book:', error);
+            this.messageService.add({ 
+                severity: 'error', 
+                summary: 'Error', 
+                detail: 'Failed to update book: ' + (error.message || 'Unknown error') 
+            });
         }
-
-        this.displayEditDialog = false; // Close the dialog
-        this.fetchBooksData();
-      } catch (error) {
-        console.error('Error updating book:', error);
-        this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to update book: ' + (error.message || 'Unknown error') });
-      }
     }
+    
+
+    proceedToEditMap() {
+        this.editBookStage = 2;
+    }
+    
+    goBackToEditDetails() {
+        this.editBookStage = 1;
+    }
+
+    // updateBookWithLocation() {
+    //     const mapInstance = document.getElementById('map-container');
+    //     const selectedCoordinates = this.mapCommon.getCoordinatesFromAddress(this.searchQuery); // Implement the logic in this helper function
+    
+    //     if (selectedCoordinates) {
+    //         // Update the location property of the selected book
+    //         this.selectedBook.location = this.convertCoordinatesToAddress(selectedCoordinates);
+
+    //         // Call the editBook function with the updated book details
+    //         this.editBook(this.selectedBook.id);
+    
+    //         // Close the dialog and reset relevant properties
+    //         this.displayEditDialog = false;
+    //         this.editBookStage = 1; // Return to the first stage
+    //         this.resetEditBookDialog();
+    //     } else {
+    //         alert('Please select a location on the map.');
+    //     }
+    // }
+
+    resetEditBookDialog() {
+        this.selectedBook = {};
+        this.markerSet = false;
+        this.searchQuery = '';
+    }
+    
 
     getBookById(bookId: string): Observable<any> {
         return this.http.get(`${this.apiUrl}/books/${bookId}`);
@@ -292,18 +358,18 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
 
     // Method to finalize the book addition
-    submitBookWithLocation() {
-        const mapInstance = document.getElementById('map');
-        const selectedCoordinates = this.getSelectedCoordinatesFromMap(mapInstance); // Define this logic
-        if (selectedCoordinates) {
-            this.newBook.location = this.convertCoordinatesToAddress(selectedCoordinates);
-            this.addBook();
-            this.displayAddDialog = false;
-            this.resetAddBookDialog();
-        } else {
-            alert("Please select a location on the map.");
-        }
-    }
+    // submitBookWithLocation() {
+    //     const mapInstance = document.getElementById('map');
+    //     const selectedCoordinates = this.getSelectedCoordinatesFromMap(mapInstance); // Define this logic
+    //     if (selectedCoordinates) {
+    //         this.newBook.location = this.convertCoordinatesToAddress(selectedCoordinates);
+    //         this.addBook();
+    //         this.displayAddDialog = false;
+    //         this.resetAddBookDialog();
+    //     } else {
+    //         alert("Please select a location on the map.");
+    //     }
+    // }
 
     // Reset the dialog state after closing
     resetAddBookDialog() {
@@ -316,18 +382,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
             publication_year: null,
             location: ''
         };
-    }
-
-    // Placeholder for converting coordinates to address
-    convertCoordinatesToAddress(coordinates: any): string {
-        // Use a geocoding service API to convert coordinates to address
-        return `Lat: ${coordinates.lat}, Lng: ${coordinates.lng}`;
-    }
-
-    // Placeholder for getting selected coordinates from the map
-    getSelectedCoordinatesFromMap(mapInstance: any): any {
-        // Implement the logic to fetch the selected coordinates from the map instance
-        return { lat: 1.2345, lng: 103.6789 }; // Example coordinates
     }
 
     searchLocation(): void {

@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { MessageService } from 'primeng/api';
 import { Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import * as turf from '@turf/turf';
 
 @Component({
@@ -11,7 +12,8 @@ import * as turf from '@turf/turf';
   standalone: true,
   templateUrl: './map-common.component.html',
   styleUrls: ['./map-common.component.css'],
-  providers: [MessageService]
+  providers: [MessageService],
+  imports: [FormsModule]
 })
 export class MapCommonComponent implements AfterViewInit {
   map: mapboxgl.Map;
@@ -21,7 +23,11 @@ export class MapCommonComponent implements AfterViewInit {
   currentUserAddress: any;
   distance: any;
   userInfoByAddress: any;
-  markers: Map<string, mapboxgl.Marker> = new Map();
+  markers: Map<string, mapboxgl.Marker[]> = new Map();
+  meetingLocation: any;
+  meetingLocations: any;
+  searchQuery: string = '';
+  N: number = 5;  
 
   constructor(private http: HttpClient, private router: Router,  private messageService: MessageService) {}
   async ngAfterViewInit(): Promise<void> {
@@ -45,15 +51,19 @@ export class MapCommonComponent implements AfterViewInit {
         });
       });
   
-      // Fetch user address data first
+
       await this.fetchUserAddressData();
-  
-      // Then, fetch all address data
       await this.fetchAllAddressData();
   
-      // After both data fetching operations, add the layers
       this.addIsochroneLayer();
-      this.addDistanceLayer();
+      // this.addDistanceLayer(this.userAddress);
+      const response = await this.http.get(`${this.apiUrl}/all-meeting-locations`).toPromise();
+      const meetingLocations = response['meeting_locations'] || [];
+      if (meetingLocations.length === 0) {
+        console.error("No valid meeting locations found.");
+        return;
+      }
+      this.addDistanceLayer(meetingLocations); 
       this.setupRecenterButton();
   
     } catch (error) {
@@ -86,64 +96,74 @@ export class MapCommonComponent implements AfterViewInit {
   }
   
 
-  setMarkerAtAddress(address: string): void {
+  setMarkerAtAddress(address: string, markerColor: string = 'blue'): void {
     // Fetch geocoding data from Mapbox API
     fetch(
       `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=pk.eyJ1IjoieWVvMzMxNiIsImEiOiJjbTNjc3ExemwxdTJ0MmlzYzQzZm43MmgyIn0.2qA9Z9Og0SHrgBsjxfvbvg`
     )
-    .then((response) => response.json())  // Parse JSON data
-    .then((data) => {
-      if (data.features.length > 0) {
-        const [longitude, latitude] = data.features[0].center;
+      .then((response) => response.json()) // Parse JSON data
+      .then((data) => {
+        if (data.features.length > 0) {
+          const [longitude, latitude] = data.features[0].center;
   
-        // Function to create and add marker with popup
-        const addMarker = (markerColor: string, popupContent?: string) => {
-          const marker = new mapboxgl.Marker({ color: markerColor })
-            .setLngLat([longitude, latitude])
-            .addTo(this.map);
-
-          this.markers.set(address, marker);
-  
-          // Create and attach the popup
-          if (popupContent) {
-            const popup = new mapboxgl.Popup({ offset: 25 })
+          // Function to create and add marker with popup
+          const addMarker = (markerColor: string, popupContent?: string) => {
+            const marker = new mapboxgl.Marker({ color: markerColor })
               .setLngLat([longitude, latitude])
-              .setHTML(popupContent)
               .addTo(this.map);
-            marker.setPopup(popup);
+  
+            // Create and attach the popup
+            if (popupContent) {
+              const popup = new mapboxgl.Popup({ offset: 25 })
+                .setLngLat([longitude, latitude])
+                .setHTML(popupContent)
+                .addTo(this.map);
+              marker.setPopup(popup);
+            }
+  
+            // Attach click event
+            marker.getElement().addEventListener('click', () => {
+              this.handleMarkerClick(address, [longitude, latitude]);
+            });
+  
+            // Store marker in the markers map
+            if (!this.markers.has(address)) {
+              this.markers.set(address, []);
+            }
+            this.markers.get(address)?.push(marker); // Add the marker to the array
+          };
+  
+          // Check if this is the user's current address
+          if (address === this.currentUserAddress[0]?.address) {
+            addMarker('red', "<strong>You're Here</strong>");
+          } else {
+            addMarker(markerColor); // Use the specified or default color
           }
-  
-          // Attach click event
-          marker.getElement().addEventListener('click', () => {
-            this.handleMarkerClick(address, [longitude, latitude]);
-          });
-        };
-  
-        // Check if this is the user's current address
-        if (address === this.currentUserAddress[0]?.address) {
-          addMarker('red', "<strong>You're Here</strong>");
         } else {
-          addMarker('blue');
+          console.error('Address not found');
         }
-  
-      } else {
-        console.error('Address not found');
-      }
-    })
-    .catch((error) => {
-      console.error('Error fetching address data:', error);
-    });
+      })
+      .catch((error) => {
+        console.error('Error fetching address data:', error);
+      });
   }
+  
 
   removeMarker(address: string): void {
-    const marker = this.markers.get(address); // Get the marker for the address
-    if (marker) {
-      marker.remove(); // Remove the marker from the map
-      this.markers.delete(address); // Remove the marker from the Map
+    const markers = this.markers.get(address); // Get the array of markers for the address
+    if (markers && markers.length > 0) {
+      const markerToRemove = markers[0]; // Get the first marker from the array (or choose based on your logic)
+      markerToRemove.remove(); // Remove this marker from the map
+      // After removing the marker, you can either delete the array or leave it to hold other markers
+      markers.splice(0, 1); // Remove the first marker from the array
+      if (markers.length === 0) {
+        this.markers.delete(address); // Remove the address entry from the map if no markers remain
+      }
     } else {
-      console.error(`No marker found for address: ${address}`);
+      console.error(`No markers found for address: ${address}`);
     }
   }
+  
   
 
   async handleMarkerClick(address: string, coordinates: [number, number]): Promise<void> {
@@ -226,10 +246,10 @@ export class MapCommonComponent implements AfterViewInit {
       this.userAddress = response;
   
       if (this.userAddress && this.userAddress.length > 0) {
-        // Iterate over each pair of addresses to calculate distances
+        
         for (let i = 0; i < this.userAddress.length; i++) {
-          const address1 = this.userAddress[i].address;
-          this.setMarkerAtAddress(address1);
+          const address = this.userAddress[i].address;
+          // this.setMarkerAtAddress(address);
         }
       }
     } catch (error) {
@@ -239,40 +259,91 @@ export class MapCommonComponent implements AfterViewInit {
   
 
   async fetchUserAddressData(): Promise<void> {
-    const response = await this.http.get(`${this.apiUrl}/user-address`).toPromise();
-    this.currentUserAddress = response;
-    this.goToAddress(this.currentUserAddress[0].address);
+    try {
+      const response = await this.http.get(`${this.apiUrl}/user-address`).toPromise();
+      this.currentUserAddress = response;
+      this.goToAddress(this.currentUserAddress[0].address);
+      this.setMarkerAtAddress(this.currentUserAddress[0].address);
+    } catch (error) {
+      console.error('Error fetching user address data:', error);
+    }
+    
   }
 
-  async addDistanceLayer(): Promise<void> {
-    const distanceFeatures = [];
+  async fetchMeetingLocationData(): Promise<void> {
+    try {
+      const response = await this.http.get(`${this.apiUrl}/meeting-location`).toPromise();
+      this.meetingLocation = response;
+      if (this.meetingLocation && this.meetingLocation.length > 0) {
+        
+        for (let i = 0; i < this.meetingLocation.length; i++) {
+          const address = this.meetingLocation[i].meeting_location;
+          
+          this.setMarkerAtAddress(address, 'green');
+        }
+      }
+    } catch (error) {
+
+    }
+  }
+
+  async addDistanceLayer(addresses: any[], topN: number = 3): Promise<void> {
+    console.log('hello')
+    console.log(addresses)
+    const distanceFeatures: any[] = [];
     const coordinates1 = await this.getCoordinatesFromAddress(this.currentUserAddress[0].address);
 
-    for (let i = 0; i < this.userAddress.length; i++) {
-        const coordinates2 = await this.getCoordinatesFromAddress(this.userAddress[i].address);
+    // Ensure coordinates1 is valid (should be a [lat, lng] tuple)
+    if (!coordinates1 || coordinates1.length !== 2) {
+        console.error("Invalid coordinates for coordinates1.");
+        return;
+    }
 
-        if (coordinates1 && coordinates2) {
-            // Fetch route between coordinates1 and coordinates2 using Mapbox Directions API
-            const route = await this.getRoute(coordinates1, coordinates2);
-            if (route) {
-                const distance = route.distance; // Distance in meters
-                const lineFeature = {
-                    type: "Feature",
-                    geometry: {
-                        type: "LineString",
-                        coordinates: route.geometry.coordinates
-                    },
-                    properties: {
-                        distance: (distance / 1000).toFixed(2) + " km" // Display distance in km
-                    }
-                };
-                distanceFeatures.push(lineFeature);
+    // Create an array to store distance and corresponding feature
+    const distances: any[] = [];
+
+    // Loop through all addresses and calculate the distance, skipping the current user address
+    for (let i = 0; i < addresses.length; i++) {
+      console.log(addresses[i])
+        const coordinates2 = await this.getCoordinatesFromAddress(addresses[i]);
+
+        // Ensure coordinates2 is valid (should be a [lat, lng] tuple)
+        if (!coordinates2 || coordinates2.length !== 2) {
+            continue; // Skip if invalid coordinates
+        }
+
+        // Skip if coordinates1 and coordinates2 are the same (i.e., same address)
+        if (coordinates1[0] !== coordinates2[0] || coordinates1[1] !== coordinates2[1]) {
+            const feature = await this.calculateDistance(coordinates1, coordinates2); // Wait for the distance feature
+            if (feature) {
+                const distance = parseFloat(feature.properties.distance.replace(" km", ""));
+                distances.push({ feature, distance, address: addresses[i] });
             }
         }
     }
 
+    // Sort the distances by ascending order (nearest first)
+    distances.sort((a: any, b: any) => a.distance - b.distance);
+
+    // Select top N nearest addresses
+    const topNearestDistances = distances.slice(0, topN);
+
+    // Push the top N features into the distanceFeatures array
+    topNearestDistances.forEach((distanceData: any) => {
+        distanceFeatures.push(distanceData.feature);
+        console.log(distanceData)
+
+        // Set markers for the top N nearest addresses
+        console.log(`Adding marker for ${distanceData.address}`); // Debugging line
+        this.setMarkerAtAddress(distanceData.address, 'green'); // Set marker color to green
+    });
+
+    // Create unique source and layer IDs based on timestamp or index
+    const layerId = `distanceLinesLayer_${new Date().getTime()}`; // Use timestamp for unique layer ID
+    const sourceId = `distanceLinesSource_${new Date().getTime()}`; // Use timestamp for unique source ID
+
     // Add distance features as GeoJSON source
-    this.map.addSource('distanceLines', {
+    this.map.addSource(sourceId, {
         type: 'geojson',
         data: {
             type: 'FeatureCollection',
@@ -282,11 +353,11 @@ export class MapCommonComponent implements AfterViewInit {
 
     // Add line layer to display the route
     this.map.addLayer({
-        id: 'distanceLinesLayer',
+        id: layerId,
         type: 'line',
-        source: 'distanceLines',
+        source: sourceId,
         paint: {
-            'line-color': '#FF5733',
+            'line-color': '#FF5733', // Customize line color here if needed
             'line-width': 3,
             'line-dasharray': [4, 2],
             'line-opacity': 0.7
@@ -295,9 +366,9 @@ export class MapCommonComponent implements AfterViewInit {
 
     // Add symbol layer for labels (Initially hidden)
     this.map.addLayer({
-        id: 'distanceLabelsLayer',
+        id: `${layerId}_labels`, // Use a unique ID for label layer
         type: 'symbol',
-        source: 'distanceLines',
+        source: sourceId,
         layout: {
             'symbol-placement': 'line',
             'text-field': ['get', 'distance'],
@@ -315,20 +386,47 @@ export class MapCommonComponent implements AfterViewInit {
     });
 
     // Add event listeners for mouse hover to show distance labels
-    this.map.on('mouseenter', 'distanceLinesLayer', (e) => {
+    this.map.on('mouseenter', layerId, (e) => {
         const features = this.map.queryRenderedFeatures(e.point, {
-            layers: ['distanceLinesLayer']
+            layers: [layerId]
         });
 
         if (features.length > 0) {
-            this.map.setPaintProperty('distanceLabelsLayer', 'text-opacity', 1); // Show distance label
+            this.map.setPaintProperty(`${layerId}_labels`, 'text-opacity', 1); // Show distance label
         }
     });
 
-    this.map.on('mouseleave', 'distanceLinesLayer', () => {
-        this.map.setPaintProperty('distanceLabelsLayer', 'text-opacity', 0); // Hide distance label
+    this.map.on('mouseleave', layerId, () => {
+        this.map.setPaintProperty(`${layerId}_labels`, 'text-opacity', 0); // Hide distance label
     });
 }
+
+
+
+async calculateDistance(coordinates1: any, coordinates2: any): Promise<any> {
+    try {
+        const route = await this.getRoute(coordinates1, coordinates2);
+
+        if (route) {
+            const distance = route.distance; // Distance in meters
+            const lineFeature = {
+                type: "Feature",
+                geometry: {
+                    type: "LineString",
+                    coordinates: route.geometry.coordinates
+                },
+                properties: {
+                    distance: (distance / 1000).toFixed(2) + " km" // Display distance in km
+                }
+            };
+            return lineFeature;
+        }
+
+    } catch (error) {
+        return null;
+    }
+}
+
 
 // Helper function to fetch a route using Mapbox Directions API
 async getRoute(coordinates1: [number, number], coordinates2: [number, number]): Promise<any> {
@@ -438,5 +536,62 @@ async setupIsochroneFiltering(minutes: number = 10): Promise<void> {
     await this.addIsochroneLayer(minutes);
     await this.filterUsersWithinIsochrone(minutes);
 }
+
+async searchLocation(): Promise<void> {
+  try {
+    await this.clearDrawnLines();
+    if (this.searchQuery) {
+      // First, go to the address and set the marker for the search query
+      await this.goToAddress(this.searchQuery);
+      await this.setMarkerAtAddress(this.searchQuery, 'yellow');
+  
+      // Fetch all meeting locations from the backend
+      const response = await this.http.get(`${this.apiUrl}/all-meeting-locations`).toPromise();
+      const meetingLocations = response['meeting_locations'] || [];
+
+      if (meetingLocations.length === 0) {
+        console.error("No valid meeting locations found.");
+        return;
+      }
+
+      console.log(meetingLocations)
+      
+      this.addDistanceLayer(meetingLocations); 
+    }
+  } catch (error) {
+    console.error('Error during search:', error);
+  }
+}
+
+async clearDrawnLines(): Promise<void> {
+  // Get all layers currently on the map
+  const layers = this.map.getStyle().layers;
+  for (const address of this.markers.keys()) {
+    if (address !== this.currentUserAddress[0].address) {
+      this.removeMarker(address);
+    }
+  }
+
+  if (!layers) return;
+
+  // Loop through the layers and remove those matching the line or label patterns
+  layers.forEach((layer) => {
+    if (layer.id.startsWith('distanceLinesLayer_') || layer.id.startsWith('distanceLinesSource_')) {
+      // Remove the layer
+      this.map.removeLayer(layer.id);
+
+      // Also remove the source associated with the layer
+      if (this.map.getSource(layer.id)) {
+        this.map.removeSource(layer.id);
+      }
+    }
+  });
+}
+
+
+
+
+
+
 }
 
