@@ -184,7 +184,6 @@ export class MapCommonComponent implements AfterViewInit {
       }).toPromise();
 
       this.userInfoByAddress = response;
-      console.log(this.userInfoByAddress)
     } catch (error) {
       console.error('Error fetching user info:', error);
       throw error;
@@ -212,7 +211,6 @@ export class MapCommonComponent implements AfterViewInit {
       const button = document.getElementById('view-details-button');
       if (button) {
         button.addEventListener('click', () => {
-          console.log(this.userInfoByAddress.id)
           // Use Angular Router to navigate to 'list' page with the user ID
           this.router.navigate(['/list', this.userInfoByAddress.id]);
         });
@@ -288,10 +286,8 @@ export class MapCommonComponent implements AfterViewInit {
   }
 
   async addDistanceLayer(addresses: any[], topN: number = 3): Promise<void> {
-    console.log('hello')
-    console.log(addresses)
     const distanceFeatures: any[] = [];
-    const coordinates1 = await this.getCoordinatesFromAddress(this.currentUserAddress[0].address);
+    let coordinates1: any[] = await this.getCoordinatesFromAddress(this.currentUserAddress[0].address);
 
     // Ensure coordinates1 is valid (should be a [lat, lng] tuple)
     if (!coordinates1 || coordinates1.length !== 2) {
@@ -302,10 +298,12 @@ export class MapCommonComponent implements AfterViewInit {
     // Create an array to store distance and corresponding feature
     const distances: any[] = [];
 
-    // Loop through all addresses and calculate the distance, skipping the current user address
+    // Create an array to store destination coordinates for Matrix API
+    const destinations: number[][] = [];
+
+    // Loop through all addresses and collect destination coordinates
     for (let i = 0; i < addresses.length; i++) {
-      console.log(addresses[i])
-        const coordinates2 = await this.getCoordinatesFromAddress(addresses[i]);
+        let coordinates2: any[] = await this.getCoordinatesFromAddress(addresses[i]);
 
         // Ensure coordinates2 is valid (should be a [lat, lng] tuple)
         if (!coordinates2 || coordinates2.length !== 2) {
@@ -313,15 +311,30 @@ export class MapCommonComponent implements AfterViewInit {
         }
 
         // Skip if coordinates1 and coordinates2 are the same (i.e., same address)
-        if (coordinates1[0] !== coordinates2[0] || coordinates1[1] !== coordinates2[1]) {
-            const feature = await this.calculateDistance(coordinates1, coordinates2); // Wait for the distance feature
-            if (feature) {
-                const distance = parseFloat(feature.properties.distance.replace(" km", ""));
-                distances.push({ feature, distance, address: addresses[i] });
-            }
+        if ((coordinates1[0] !== coordinates2[0] || coordinates1[1] !== coordinates2[1]) && Array.isArray(coordinates2)) {
+            destinations.push(coordinates2); // Store valid destinations
         }
-    }
 
+    }
+    // Get travel times from Mapbox Matrix API (one origin and multiple destinations)
+    const travelTimes = await this.calculateTravelTimesWithMatrixAPI(coordinates1, destinations);
+    // Loop through all addresses and calculate the distance, skipping the current user address
+    for (let i = 0; i < addresses.length; i++) {
+      const coordinates2 = destinations[i];
+      const feature = await this.calculateDistance(coordinates1, coordinates2); // Wait for the distance feature
+  
+      if (feature) {
+          const distance = parseFloat(feature.properties.distance.replace(" km", ""));
+          const timeData = travelTimes[i]; // Time array: [drivingTime, cyclingTime, walkingTime]
+
+          // Ensure timeData is correctly populated
+          if (timeData && timeData.length === 3) {
+              // Add travelTime to feature properties
+              feature.properties.travelTime = timeData;
+              distances.push({ feature, distance, travelTime: timeData, address: addresses[i] });
+          }
+      }
+  }
     // Sort the distances by ascending order (nearest first)
     distances.sort((a: any, b: any) => a.distance - b.distance);
 
@@ -331,10 +344,6 @@ export class MapCommonComponent implements AfterViewInit {
     // Push the top N features into the distanceFeatures array
     topNearestDistances.forEach((distanceData: any) => {
         distanceFeatures.push(distanceData.feature);
-        console.log(distanceData)
-
-        // Set markers for the top N nearest addresses
-        console.log(`Adding marker for ${distanceData.address}`); // Debugging line
         this.setMarkerAtAddress(distanceData.address, 'green'); // Set marker color to green
     });
 
@@ -385,6 +394,33 @@ export class MapCommonComponent implements AfterViewInit {
         }
     });
 
+    this.map.addLayer({
+      id: `${layerId}_labels_travel_time`, // Unique ID for the travel time label layer
+      type: 'symbol',
+      source: sourceId,
+      layout: {
+          'symbol-placement': 'line',
+          'text-field': [
+              'concat',
+              'Driving: ', ['coalesce', ['to-string', ['floor', ["at", 0, ["get", "travelTime"]]]], 'N/A'], ' min, ',  // Ensure value is a string
+              'Cycling: ', ['coalesce', ['to-string', ['floor', ["at", 1, ["get", "travelTime"]]]], 'N/A'], ' min, ',  // Ensure value is a string
+              'Walking: ', ['coalesce', ['to-string', ['floor', ["at", 2, ["get", "travelTime"]]]], 'N/A'], ' min'     // Ensure value is a string
+          ],
+          'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+          'text-size': 12,
+          'text-anchor': 'top',
+          'text-offset': [0, 1]
+      },
+      paint: {
+          'text-color': '#FFFF00', // Yellow color for text
+          'text-halo-color': '#000000', // Black text halo
+          'text-halo-width': 2,
+          'text-opacity': 0 // Initially hide text
+      }
+  });
+  
+  
+
     // Add event listeners for mouse hover to show distance labels
     this.map.on('mouseenter', layerId, (e) => {
         const features = this.map.queryRenderedFeatures(e.point, {
@@ -393,12 +429,39 @@ export class MapCommonComponent implements AfterViewInit {
 
         if (features.length > 0) {
             this.map.setPaintProperty(`${layerId}_labels`, 'text-opacity', 1); // Show distance label
+            this.map.setPaintProperty(`${layerId}_labels_travel_time`, 'text-opacity', 1); 
         }
     });
 
     this.map.on('mouseleave', layerId, () => {
         this.map.setPaintProperty(`${layerId}_labels`, 'text-opacity', 0); // Hide distance label
+        this.map.setPaintProperty(`${layerId}_labels_travel_time`, 'text-opacity', 0); 
     });
+
+}
+
+
+
+// Function to calculate travel times for different modes using Mapbox Matrix API with a single origin
+async calculateTravelTimesWithMatrixAPI(origin: number[], destinations: number[][]): Promise<any[]> {
+  const travelModes = ['driving', 'cycling', 'walking'];
+  const travelTimes: any[] = [];
+
+  console.log(destinations);
+  for (const mode of travelModes) {
+      const matrixUrl = `https://api.mapbox.com/directions-matrix/v1/mapbox/${mode}/${origin.join(',')};${destinations.map((dest) => dest.join(',')).join(';')}?sources=0&annotations=distance,duration&access_token=pk.eyJ1IjoieWVvMzMxNiIsImEiOiJjbTNjc3ExemwxdTJ0MmlzYzQzZm43MmgyIn0.2qA9Z9Og0SHrgBsjxfvbvg`;
+      const response = await fetch(matrixUrl);
+      const data = await response.json();
+
+      // Remove the first value (origin to itself) from the distances and durations arrays
+      const modeTravelTimes = data.durations[0].slice(1).map((duration: number) => duration / 60); // Convert seconds to minutes, skipping first element
+      travelTimes.push(modeTravelTimes);
+  }
+
+  // Transpose the results to match the structure for each destination
+  const transposedTimes = travelTimes[0].map((_, i) => travelModes.map((_, j) => travelTimes[j][i]));
+  console.log(transposedTimes);
+  return transposedTimes; // Array of arrays containing [driving, cycling, walking] times for each destination
 }
 
 
@@ -553,8 +616,6 @@ async searchLocation(): Promise<void> {
         console.error("No valid meeting locations found.");
         return;
       }
-
-      console.log(meetingLocations)
       
       this.addDistanceLayer(meetingLocations); 
     }
