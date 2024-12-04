@@ -456,17 +456,20 @@ app.get('/api/all-meeting-locations', async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('profile_books_testing')
-      .select('meeting_location');  // Get the meeting_location field
+      .select('user_id, meeting_location');  // Get both user_id and meeting_location fields
 
     if (error) throw error;
 
     // Filter out any null values in meeting_location
     const validMeetingLocations = data.filter(location => location.meeting_location !== null)
-                                      .map(location => location.meeting_location);
+                                      .map(location => ({
+                                          user_id: location.user_id,
+                                          meeting_location: location.meeting_location
+                                      }));
 
     console.log("Valid Meeting Locations: ", validMeetingLocations);
-    
-    // Send the filtered list of valid meeting locations as the response
+
+    // Send the filtered list of valid meeting locations along with user_id
     res.json({ meeting_locations: validMeetingLocations });
 
   } catch (error) {
@@ -475,6 +478,34 @@ app.get('/api/all-meeting-locations', async (req, res) => {
 });
 
 
+app.get('/api/user-id-info', async (req, res) => {
+
+  const user_id = req.query.user_id;
+
+  if (!user_id) {
+    return res.status(400).json({ error: 'Address is required' });
+  }
+
+  try {
+    // Query Supabase to match the `address` column in `profiles` table
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user_id);
+
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+
+    if (data.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json(data[0]); // Return the first matching user profile
+  } catch (err) {
+    res.status(500).json({ error: 'An error occurred while fetching user info' });
+  }
+});
 
 app.get('/api/user-info-address', async (req, res) => {
 
