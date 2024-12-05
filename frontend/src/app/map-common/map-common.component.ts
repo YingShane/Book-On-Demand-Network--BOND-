@@ -36,7 +36,34 @@ export class MapCommonComponent implements AfterViewInit {
         private router: Router,
         private messageService: MessageService
     ) {}
-    async ngAfterViewInit(): Promise<void> {
+    ngAfterViewInit(): void {
+        try {
+            this.initializeMap().then(async () => {
+                // Additional operations after map initialization
+                await this.fetchUserAddressData();
+                await this.fetchAllAddressData();
+                this.addIsochroneLayer();
+
+                const response = await this.http
+                    .get(`${this.apiUrl}/all-meeting-locations`)
+                    .toPromise();
+                const meetingLocations = response['meeting_locations'] || [];
+
+                if (meetingLocations.length === 0) {
+                    console.error('No valid meeting locations found.');
+                    return;
+                }
+
+                this.addDistanceLayer(meetingLocations);
+                this.setupRecenterButton();
+            });
+        } catch (error) {
+            console.error('Error during map setup or data fetching:', error);
+        }
+    }
+
+    // New function to initialize the map
+    async initializeMap(): Promise<void> {
         try {
             // Set up the Mapbox access token
             (mapboxgl as any).accessToken =
@@ -57,27 +84,12 @@ export class MapCommonComponent implements AfterViewInit {
                     resolve(); // Resolve the promise once the map is loaded
                 });
             });
-
-            await this.fetchUserAddressData();
-            await this.fetchAllAddressData();
-
-            this.addIsochroneLayer();
-            const response = await this.http
-                .get(`${this.apiUrl}/all-meeting-locations`)
-                .toPromise();
-            const meetingLocations = response['meeting_locations'] || [];
-
-            if (meetingLocations.length === 0) {
-                console.error('No valid meeting locations found.');
-                return;
-            }
-            
-            this.addDistanceLayer(meetingLocations);
-            this.setupRecenterButton();
         } catch (error) {
-            console.error('Error during map setup or data fetching:', error);
+            console.error('Error initializing the map:', error);
+            throw error;
         }
     }
+    
 
     async goToAddress(address: string) {
         try {
@@ -266,6 +278,8 @@ export class MapCommonComponent implements AfterViewInit {
             );
             const data = await response.json();
 
+            console.log(data)
+
             if (data.features && data.features.length > 0) {
                 const [longitude, latitude] = data.features[0].center;
                 return [longitude, latitude];
@@ -326,7 +340,7 @@ export class MapCommonComponent implements AfterViewInit {
     }
 
     async addDistanceLayer(addresses: any[], user_id: string = null, topN: number = 3): Promise<void> {
-      console.log(addresses)
+
         this.distanceFeatures = [];
 
         let coordinates1: any[] = await this.getCoordinatesFromAddress(

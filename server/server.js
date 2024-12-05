@@ -586,3 +586,20 @@ app.post('/api/update-location', async (req, res) => {
   }
 });
 
+
+app.get('/api/book-meeting-location/:id', async (req, res) => {
+  try {
+      const { id } = req.params;
+      const { data, error } = await supabase
+          .from('books')
+          .select('meeting_location')
+          .eq('id', id)
+          .single();
+      console.log(data)
+      if (error) throw error;
+
+      res.json({ meeting_location: data.meeting_location });
+  } catch (error) {
+      res.status(500).send(error.message);
+  }
+});
