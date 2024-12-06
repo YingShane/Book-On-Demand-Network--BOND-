@@ -1,8 +1,8 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { InputDemoComponent } from './inputdemo.component';
-import { InputDemoRoutingModule } from './inputdemo-routing.module';
+import { UploadedBooksComponent } from './uploaded-books.component';
+import { UploadedBooksRoutingModule } from './uploaded-books-routing.module';
 import { AutoCompleteModule } from "primeng/autocomplete";
 import { CalendarModule } from "primeng/calendar";
 import { ChipsModule } from "primeng/chips";
@@ -28,12 +28,18 @@ import { SliderModule } from 'primeng/slider';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { InputGroupModule } from 'primeng/inputgroup';
 import { TableModule } from 'primeng/table';
+import { DialogModule } from 'primeng/dialog';
+import { DataViewModule } from 'primeng/dataview';
+import { PickListModule } from 'primeng/picklist';
+import { OrderListModule } from 'primeng/orderlist';
+import { MapCommonComponent } from 'src/app/map-common/map-common.component';
+
 
 @NgModule({
 	imports: [
 		CommonModule,
 		FormsModule,
-		InputDemoRoutingModule,
+		UploadedBooksRoutingModule,
 		AutoCompleteModule,
 		CalendarModule,
 		ChipsModule,
@@ -58,8 +64,13 @@ import { TableModule } from 'primeng/table';
 		ButtonModule,
 		InputGroupModule,
 		InputGroupAddonModule,
-		TableModule
+		TableModule,
+		DialogModule,
+		DataViewModule,
+		PickListModule,
+		OrderListModule,
+		MapCommonComponent
 	],
-	declarations: [InputDemoComponent]
+	declarations: [UploadedBooksComponent]
 })
-export class InputDemoModule { }
+export class UploadedBooksModule { }

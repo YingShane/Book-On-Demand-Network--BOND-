@@ -1,0 +1,121 @@
+<div class="grid">
+    <div class="col-12">
+        <div class="card">
+            <h5>Browse Books</h5>
+            <p-dataView
+                #dv
+                [value]="books"
+                [paginator]="true"
+                [rows]="9"
+                filterBy="title"
+                [sortField]="sortField"
+                [sortOrder]="sortOrder"
+                layout="grid"
+            >
+                <ng-template pTemplate="header">
+                    <div
+                        class="flex flex-column md:flex-row md:justify-content-between gap-2"
+                    >
+                        <!-- Sort Dropdown -->
+                        <p-dropdown
+                            [options]="sortOptions"
+                            placeholder="Sort By Title"
+                            (onChange)="onSortChange($event)"
+                        ></p-dropdown>
+
+                        <!-- Filter Criterion Dropdown -->
+                        <p-dropdown
+							[options]="[
+								{ label: 'Title', value: 'title' },
+								{ label: 'Author', value: 'author' }
+							]"
+							[ngModelChange]="searchCriterion"
+							placeholder="Filter By"
+							style="width: 150px"
+						></p-dropdown>
+
+
+                        <!-- Search Bar -->
+                        <span class="p-input-icon-left">
+                            <i class="pi pi-search"></i>
+                            <input
+                                type="search"
+                                pInputText
+                                placeholder="Search by {{
+                                    searchCriterion | titlecase
+                                }}"
+                                (keydown.enter)="onFilter($event)"
+                            />
+                        </span>
+                    </div>
+                </ng-template>
+
+                <ng-template let-book pTemplate="gridItem">
+                    <div class="grid grid-nogutter">
+                        <div class="col-12 md:col-4" *ngFor="let book of books">
+                            <div class="card m-3 border-1 surface-border">
+                                <div
+                                    class="flex flex-column align-items-center text-center mb-3"
+                                >
+                                    <img
+                                        [src]="book.image"
+                                        [alt]="book.title"
+                                        class="w-9 shadow-2 my-3 mx-0"
+                                    />
+                                    <div class="text-2xl font-bold">
+                                        {{ book.title }}
+                                    </div>
+                                    <div class="mb-3">
+                                        Author: {{ book.author }}
+                                    </div>
+                                    <div class="flex align-items-center">
+                                        <i class="pi pi-tag mr-2"></i>
+                                        <span class="font-semibold">{{
+                                            book.genre
+                                        }}</span>
+                                    </div>
+                                </div>
+                                <!-- Button to check the location -->
+                                <button
+                                    pButton
+                                    label="Check Location"
+                                    class="p-button-primary"
+                                    (click)="openMapPopup(book)"
+                                ></button>
+                                <button
+                                    pButton
+                                    label="Borrow Book"
+                                    class="p-button-secondary ml-2"
+                                    (click)="borrowBook(book)"
+                                ></button>
+                            </div>
+                        </div>
+                    </div>
+                </ng-template>
+            </p-dataView>
+        </div>
+    </div>
+</div>
+
+<!-- Map popup -->
+<p-dialog
+    header="Meeting Location"
+    [(visible)]="displayMapDialog"
+    [modal]="true"
+    [responsive]="true"
+    [closable]="true"
+    [style]="{ width: '1300px', height: '1000px' }"
+    [contentStyle]="{ position: 'relative', overflow: 'hidden' }"
+>
+    <!-- Map Section -->
+    <div
+        id="map-container"
+        style="height: 100%; position: relative; z-index: 0"
+    >
+        <app-map-common
+            #mapCommon
+            [dialogVisible]="displayMapDialog"
+            style="flex: 1"
+        ></app-map-common>
+    </div>
+</p-dialog>

@@ -1,7 +1,7 @@
 <div class="grid">
     <div class="col-12">
         <div class="card">
-            <h5>DataView</h5>
+            <h5>Uploaded Books</h5>
             <p-dataView #dv [value]="books" [paginator]="true" [rows]="9" filterBy="title" 
                 [sortField]="sortField" [sortOrder]="sortOrder" layout="grid">
                 <ng-template pTemplate="header">
@@ -49,12 +49,22 @@
     [(visible)]="displayMapDialog"
     [modal]="true"
     [responsive]="true"
+    [closable]="true"
     [style]="{width: '1300px', height: '1000px'}"
+    [contentStyle]="{ position: 'relative', overflow: 'hidden' }"
 >
     <!-- Map Section -->
-    <div id="map-container" style="height: 100%; display: flex; flex-direction: column;">
-        <app-map-common #mapCommon style="flex: 1; z-index: 999;"></app-map-common>
+    <div
+        id="map-container"
+        style="
+            height: 100%; 
+            position: relative; 
+            z-index: 0;
+        "
+    >
+        <app-map-common #mapCommon [dialogVisible]="displayMapDialog" style="flex: 1;"></app-map-common>
     </div>
 </p-dialog>
+
 
 

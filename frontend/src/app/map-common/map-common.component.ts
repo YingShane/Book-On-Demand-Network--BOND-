@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, OnInit } from '@angular/core';
+import { AfterViewInit, Component, OnInit, Input } from '@angular/core';
 import * as mapboxgl from 'mapbox-gl';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
@@ -16,6 +16,7 @@ import * as turf from '@turf/turf';
     imports: [FormsModule],
 })
 export class MapCommonComponent implements AfterViewInit {
+    @Input() dialogVisible: boolean = false;
     map: mapboxgl.Map;
     address: string = '';
     apiUrl = environment.apiUrl;

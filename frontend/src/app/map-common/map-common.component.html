@@ -1,53 +1,116 @@
-<div id="map" style="height: 100%;"></div>
-<input 
-  type="text" 
-  pInputText 
-  [(ngModel)]="searchQuery" 
-  placeholder="Search for a location..." 
-  (keyup.enter)="searchLocation()"
-  style="position: absolute; top: 100px; right: 20px; padding: 10px; border-radius: 5px; z-index: 10; width: 250px; border: 1px solid #ccc;" />
+<div id="map" style="height: 100%"></div>
+<input
+    type="text"
+    pInputText
+    [(ngModel)]="searchQuery"
+    *ngif ="!dialogVisible"
+    placeholder="Search for a location..."
+    (keyup.enter)="searchLocation()"
+    style="
+        position: absolute;
+        top: 100px;
+        right: 20px;
+        padding: 10px;
+        border-radius: 5px;
+        z-index: 10;
+        width: 250px;
+        border: 1px solid #ccc;
+    "
+/>
 <button
-  id="searchButton"
-  (click)="searchLocation()"
-  style="position: absolute; top: 100px; right: 280px; padding: 10px; background-color: #FF5733; color: white; border: none; border-radius: 5px; cursor: pointer; z-index: 10;">
-  Search
+    id="searchButton"
+    (click)="searchLocation()"
+    *ngif ="!dialogVisible"
+    style="
+        position: absolute;
+        top: 100px;
+        right: 280px;
+        padding: 10px;
+        background-color: #ff5733;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        z-index: 10;
+    "
+>
+    Search
 </button>
 
-<div 
-  id="transportModeButtons" 
-  style="position: absolute; bottom: 50px; right: 30px; z-index: 10; display: flex; flex-direction: row; gap: 10px; background-color: rgba(255, 255, 255, 0.9); padding: 10px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-  <button 
-    (click)="showTravelTimes('driving')" 
-    style="padding: 10px 20px; background-color: #007BFF; color: white; border: none; border-radius: 5px; cursor: pointer; text-align: center;">
-    Driving
-  </button>
-  <button 
-    (click)="showTravelTimes('cycling')" 
-    style="padding: 10px 20px; background-color: #28A745; color: white; border: none; border-radius: 5px; cursor: pointer; text-align: center;">
-    Cycling
-  </button>
-  <button 
-    (click)="showTravelTimes('walking')" 
-    style="padding: 10px 20px; background-color: #FFC107; color: black; border: none; border-radius: 5px; cursor: pointer; text-align: center;">
-    Walking
-  </button>
+<div
+    id="transportModeButtons"
+    style="
+        position: absolute;
+        bottom: 50px;
+        right: 30px;
+        z-index: 10;
+        display: flex;
+        flex-direction: row;
+        gap: 10px;
+        background-color: rgba(255, 255, 255, 0.9);
+        padding: 10px;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    "
+>
+    <button
+        (click)="showTravelTimes('driving')"
+        style="
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: center;
+        "
+    >
+        Driving
+    </button>
+    <button
+        (click)="showTravelTimes('cycling')"
+        style="
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: center;
+        "
+    >
+        Cycling
+    </button>
+    <button
+        (click)="showTravelTimes('walking')"
+        style="
+            padding: 10px 20px;
+            background-color: #ffc107;
+            color: black;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: center;
+        "
+    >
+        Walking
+    </button>
 </div>
 
-<button id="recenterButton" style="position: absolute; bottom: 120px; right: 30px; padding: 10px; background-color: #FF5733; color: white; border: none; border-radius: 5px; cursor: pointer; z-index: 10;">Recenter Map</button>
-<!-- <label for="filterType" style="position: absolute; bottom: 100px; right: 200px;">Filter by:</label>
-<select id="filterType" style="position: absolute; bottom: 80px; right: 200px;">
-    <option value="time">Time (Minutes)</option>
-    <option value="distance">Distance (Meters)</option>
-</select> -->
-
-
-<!-- <label for="timeRadius" style="position: absolute; bottom: 60px; right: 200px;">Set time radius (in minutes):</label>
-<input type="range" id="timeRadius" min="5" max="60" value="10" style="position: absolute; bottom: 40px; right: 200px;">
-<span id="timeRadiusValue" style="position: absolute; bottom: 20px; right: 200px;">10</span> minutes
-
-
-<label for="distanceRadius">Set distance radius (in meters):</label>
-<input type="range" id="distanceRadius" min="500" max="10000" value="500">
-<span id="distanceRadiusValue">500</span> meters -->
-
-
+<button
+    id="recenterButton"
+    style="
+        position: absolute;
+        bottom: 120px;
+        right: 30px;
+        padding: 10px;
+        background-color: #ff5733;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        z-index: 10;
+    "
+>
+    Recenter Map
+</button>
