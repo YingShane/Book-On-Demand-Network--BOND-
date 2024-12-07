@@ -1,5 +1,18 @@
 .actions-column .action-buttons {
-	display: flex;
-	gap: 0.5rem; /* Space between the buttons */
-	align-items: center;
+    display: flex;
+    gap: 0.5rem; /* Space between the buttons */
+    align-items: center;
+}
+
+.genre-dropdown-content {
+    background-color: var(--surface-card);
+    border: 1px solid var(--surface-border);
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.selected-card .card {
+    background-color: var(--primary-color) !important; /* Change to your desired color */
+    color: white !important; /* Change text color for contrast */
+    transition: background-color 0.2s ease-in-out; /* Smooth transition */
 }

@@ -16,6 +16,79 @@
                     <div
                         class="flex flex-column md:flex-row md:justify-content-between gap-2"
                     >
+                        <!-- Filter by Genre (Dropdown with Radio Buttons) -->
+                        <div>
+                            <!-- Button to open the popup -->
+                            <button
+                                pButton
+                                label="Select Genres"
+                                class="p-button-primary w-full"
+                                (click)="showGenrePopup = true"
+                            ></button>
+
+                            <!-- Genre Selection Popup -->
+                            <p-dialog
+                                header="Select Genres"
+                                [(visible)]="showGenrePopup"
+                                [modal]="true"
+                                [closable]="true"
+                                [style]="{ width: '90vw', maxWidth: '600px' }"
+                                [draggable]="false"
+                            >
+                                <!-- Genre Cards -->
+                                <div
+                                    class="p-fluid grid"
+                                    style="
+                                        gap: 10px;
+                                        display: flex;
+                                        flex-wrap: wrap;
+                                        justify-content: center;
+                                    "
+                                >
+                                    <!-- Genre Cards -->
+                                    <div
+                                        *ngFor="let genre of genreOptions"
+                                        class="col-12 sm:col-6 md:col-3"
+                                        (click)="
+                                            toggleGenreSelection(genre.value)
+                                        "
+                                        [ngClass]="{
+                                            'selected-card':
+                                                selectedGenres.includes(
+                                                    genre.value
+                                                )
+                                        }"
+                                        style="cursor: pointer; padding: 10px"
+                                    >
+                                        <div
+                                            class="card p-2 text-center surface-card shadow-2"
+                                        >
+                                            <div class="font-bold text-lg">
+                                                {{ genre.label }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Centered Filter Button -->
+                                <div
+                                    class="filter-button-container"
+                                    style="
+                                        display: flex;
+                                        justify-content: center;
+                                        margin-top: 20px;
+                                    "
+                                >
+                                    <button
+                                        pButton
+                                        label="Filter Genres"
+                                        class="p-button-primary"
+                                        (click)="onFilterGenres()"
+                                    ></button>
+                                </div>
+                            </p-dialog>
+                        </div>
+
                         <!-- Sort Dropdown -->
                         <p-dropdown
                             [options]="sortOptions"
@@ -25,28 +98,33 @@
 
                         <!-- Filter Criterion Dropdown -->
                         <p-dropdown
-							[options]="[
-								{ label: 'Title', value: 'title' },
-								{ label: 'Author', value: 'author' }
-							]"
-							[ngModelChange]="searchCriterion"
-							placeholder="Filter By"
-							style="width: 150px"
-						></p-dropdown>
-
+                            [options]="[
+                                { label: 'Title', value: 'title' },
+                                { label: 'Author', value: 'author' }
+                            ]"
+                            (onChange)="onSearchCriterionChange($event)"
+                            [ngModel]="searchCriterion"
+                            placeholder="Filter By"
+                            style="width: 150px"
+                        ></p-dropdown>
 
                         <!-- Search Bar -->
-                        <span class="p-input-icon-left">
-                            <i class="pi pi-search"></i>
-                            <input
-                                type="search"
-                                pInputText
-                                placeholder="Search by {{
-                                    searchCriterion | titlecase
-                                }}"
-                                (keydown.enter)="onFilter($event)"
-                            />
-                        </span>
+                        <input
+                            type="search"
+                            pInputText
+                            placeholder="Search by {{
+                                searchCriterion | titlecase
+                            }}"
+                            (keydown.enter)="onFilter($event)"
+                        />
+
+                        <!-- Advanced Search Button -->
+                        <button
+                            pButton
+                            label="Advanced Search"
+                            class="p-button-secondary"
+                            (click)="showAdvancedSearchPopup = true"
+                        ></button>
                     </div>
                 </ng-template>
 
@@ -97,7 +175,7 @@
     </div>
 </div>
 
-<!-- Map popup -->
+<!-- Map Popup -->
 <p-dialog
     header="Meeting Location"
     [(visible)]="displayMapDialog"
@@ -117,5 +195,84 @@
             [dialogVisible]="displayMapDialog"
             style="flex: 1"
         ></app-map-common>
+    </div>
+</p-dialog>
+
+<!-- Advanced Search Popup -->
+<p-dialog
+    header="Advanced Search"
+    [(visible)]="showAdvancedSearchPopup"
+    [modal]="true"
+    [closable]="true"
+    [style]="{ width: '90vw', maxWidth: '600px' }"
+    [draggable]="false"
+>
+    <div class="p-fluid">
+        <!-- Search Input -->
+        <div class="field">
+            <label for="advancedSearchInput">Search</label>
+            <input
+                id="advancedSearchInput"
+                type="text"
+                pInputText
+                [(ngModel)]="advancedSearchInput"
+                placeholder="Search by {{
+                    advancedSearchCriterion | titlecase
+                }}"
+            />
+        </div>
+
+        <!-- Filter By Dropdown -->
+        <div class="field">
+            <label for="filterBy">Filter By</label>
+            <p-dropdown
+                [options]="filterByOptions"
+                (onChange)="onAdvancedSearchCriterionChange($event)"
+                [ngModel]="advancedSearchCriterion"
+                id="filterBy"
+                placeholder="Select Filter"
+                style="width: 100%"
+            ></p-dropdown>
+        </div>
+
+        <!-- Genre Selection -->
+        <div class="field">
+            <label>Genres</label>
+            <div class="p-fluid grid" style="gap: 10px">
+                <div
+                    *ngFor="let genre of genreOptions"
+                    class="col-12 sm:col-6 md:col-3"
+                    (click)="toggleGenreSelection(genre.value)"
+                    [ngClass]="{
+                        'selected-card': selectedGenres.includes(genre.value)
+                    }"
+                    style="cursor: pointer; padding: 10px"
+                >
+                    <div class="card p-2 text-center surface-card shadow-2">
+                        <div class="font-bold text-lg">{{ genre.label }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sort Options -->
+        <div class="field">
+            <label>Sort By</label>
+            <p-dropdown
+                [options]="sortOptions"
+                [(ngModel)]="advancedSortField"
+                placeholder="Sort By"
+            ></p-dropdown>
+        </div>
+
+        <!-- Apply Filters Button -->
+        <div class="field text-center">
+            <button
+                pButton
+                label="Apply Filters"
+                class="p-button-primary"
+                (click)="onApplyAdvancedSearch()"
+            ></button>
+        </div>
     </div>
 </p-dialog>
