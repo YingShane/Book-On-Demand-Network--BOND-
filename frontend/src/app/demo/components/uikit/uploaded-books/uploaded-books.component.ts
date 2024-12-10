@@ -44,18 +44,20 @@ export class UploadedBooksComponent implements OnInit {
             this.http
                 .get<any[]>(`${this.apiUrl}/public_books`) // Adjust if you're fetching the books with an API call
                 .subscribe((data) => {
-                    
-                    this.books = data.map(book => {
-                        console.log(book.image_name)
-                        // Assuming book.cover_url contains the file name or metadata
+                    this.allBooks = data;
+    
+                    // Map data to include book images and set books to allBooks initially
+                    this.books = this.allBooks.map((book) => {
+                        console.log(book.image_name); // Log image name for debugging
                         book.image = `https://oztdufozgcxjfmmbyqtz.supabase.co/storage/v1/object/public/book_covers/${book.image_name}`;
                         return book;
                     });
-                    console.log(this.books)
+                    console.log(this.books); // Log mapped books for debugging
+    
                     this.updateGenreOptions();
                 });
         });
-        
+    
         this.sortOptions = [
             { label: 'Title Ascending', value: 'title' },
             { label: 'Title Descending', value: '!title' },
@@ -67,6 +69,7 @@ export class UploadedBooksComponent implements OnInit {
             { label: 'Author', value: 'author' },
         ];
     }
+    
     
     
     
