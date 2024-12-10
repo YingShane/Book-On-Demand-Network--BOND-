@@ -1,55 +1,27 @@
-.book-management-card, .admin-information-card {
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+/* General Grid and Layout */
+.grid {
+  display: grid;
+  gap: 20px;
   padding: 20px;
-  overflow: hidden; /* Ensures rounded corners if inner content overflows */
-  margin-bottom: 20px; /* Consistent spacing between sections */
-}
-
-.book-management-title, .admin-information-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin-bottom: 20px;
-  color: #333;
-  border-bottom: 1px solid #ddd;
-  padding-bottom: 5px;
-}
-
-.book-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.table-header {
-  background-color: #f4f4f4;
-  color: #555;
-}
-
-.book-row {
-  transition: background-color 0.3s ease;
-  cursor: pointer; /* Adds interactive feel */
-}
-
-.book-row:hover {
   background-color: #f9f9f9;
 }
 
-.banned-book {
-  background-color: #ffe6e6;
-  color: #d9534f;
+.card {
+  padding: 20px;
+  border-radius: 8px;
+  background-color: #ffffff;
+  box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.delete-button {
-  color: #dc3545;
+/* Admin Information Section */
+.admin-information-card {
+  border-left: 5px solid #007ad9;
 }
 
-.view-books-button {
-  color: #28a745;
-}
-
-.add-book-button {
-  margin-top: 10px;
+.admin-information-title {
+  font-size: 1.5rem;
+  color: #333333;
+  margin-bottom: 15px;
 }
 
 .field {
@@ -57,35 +29,121 @@
 }
 
 .field label {
+  font-weight: bold;
   display: block;
-  font-weight: 600;
-  color: #555;
+  color: #666666;
+  margin-bottom: 5px;
 }
 
 .field p {
-  margin: 5px 0 0;
-  color: #666;
-  font-size: 1rem;
+  margin: 0;
+  color: #333333;
 }
 
 .edit-button {
-  margin-top: 10px; /* Consistent button spacing */
+  background-color: #007ad9;
+  border: none;
+  color: #ffffff;
+  padding: 10px 15px;
+  font-size: 14px;
 }
 
-.inline-field {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+/* Book Management Section */
+.book-management-card {
+  border-left: 5px solid #28a745;
 }
 
-.inline-field label {
+.book-management-title {
+  font-size: 1.5rem;
+  color: #333333;
+  margin-bottom: 15px;
+}
+
+.book-table .table-header {
+  background-color: #f5f5f5;
+  color: #333333;
+}
+
+.book-row {
+  transition: background-color 0.2s ease;
+}
+
+.book-row:hover {
+  background-color: #f9f9f9;
+}
+
+.banned-book {
+  background-color: #ffe5e5;
+}
+
+.book-table td {
+  padding: 10px;
+  vertical-align: middle;
+  color: #555555;
+}
+
+.book-table th {
+  text-align: left;
   font-weight: bold;
 }
 
-.inline-field p {
-  margin: 0;
+/* Buttons */
+button {
+  cursor: pointer;
 }
 
-.field label.font-medium {
-  font-weight: bold !important;
+.edit-button {
+  /* color: #007ad9; */
+}
+
+.delete-button {
+  color: #dc3545;
+}
+
+.view-books-button {
+  color: #17a2b8;
+}
+
+.add-book-button {
+  background-color: #28a745;
+  border: none;
+  color: #ffffff;
+  padding: 10px 15px;
+  font-size: 14px;
+}
+
+/* Dialogs */
+p-dialog .form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+p-dialog .field {
+  margin-bottom: 15px;
+}
+
+p-dialog label {
+  font-weight: bold;
+  display: block;
+  color: #666666;
+  margin-bottom: 5px;
+}
+
+p-dialog input,
+p-dialog select,
+p-dialog textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #dddddd;
+  border-radius: 4px;
+  color: #333333;
+  font-size: 14px;
+}
+
+p-dialog input:focus,
+p-dialog select:focus,
+p-dialog textarea:focus {
+  border-color: #007ad9;
+  outline: none;
 }

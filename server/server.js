@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const cors = require('cors'); // Import the cors package
 const authService = require('./auth.service');
 
+
 // Load environment variables from .env file
 dotenv.config();
 const app = express();
@@ -12,11 +13,44 @@ const port = process.env.PORT || 3000;
 // Supabase configuration
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
+const flaskServerUrl = process.env.FLASK_SERVER_URL;
 const supabase = createClient(supabaseUrl, supabaseKey);
+
+const multer = require('multer');
+const uploadMemory = multer({ storage: multer.memoryStorage() });
+
+const bodyParser = require('body-parser');
+const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
+const FormData = require('form-data'); 
 
 app.use(cors()); // Enable CORS for all routes
 app.use(express.json());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
+
+// Ensure the 'uploads' directory exists, create it if it doesn't
+const uploadDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+  console.log('Uploads directory created.');
+} else {
+  console.log('Uploads directory already exists.');
+}
+
+// Set up Multer storage configuration
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadDir);  // Set the destination for uploaded files
+  },
+  filename: function (req, file, cb) {
+    cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname)); // Use a unique filename
+  }
+});
+
+const upload = multer({ storage: storage });
 // Route to get admin information
 app.get('/api/dashboard', async (req, res) => {
     try {
@@ -148,7 +182,10 @@ app.post('/api/newBook', async (req, res) => {
         throw errorCopy;
       }
 
-      res.status(201).json({ data, dataCopy });
+      res.status(201).json({
+        message: 'Book successfully added!',
+        book: data // Assuming only one book is inserted
+    });
   } catch (error) {
       console.error('Error inserting book:', error.message); // Log the error
       res.status(500).json({ error: error.message });
@@ -466,9 +503,6 @@ app.get('/api/all-meeting-locations', async (req, res) => {
                                           user_id: location.user_id,
                                           meeting_location: location.meeting_location
                                       }));
-
-    console.log("Valid Meeting Locations: ", validMeetingLocations);
-
     // Send the filtered list of valid meeting locations along with user_id
     res.json({ meeting_locations: validMeetingLocations });
 
@@ -595,11 +629,154 @@ app.get('/api/book-meeting-location/:id', async (req, res) => {
           .select('meeting_location')
           .eq('id', id)
           .single();
-      console.log(data)
+
       if (error) throw error;
 
       res.json({ meeting_location: data.meeting_location });
   } catch (error) {
       res.status(500).send(error.message);
+  }
+});
+
+
+// app.post('/api/upload-cover', upload.single('image'), async (req, res) => {
+//   try {
+//       const { bookId } = req.body;  // Get bookId from the form data
+//       const file = req.file;
+
+//       if (!file) {
+//           return res.status(400).send('No file uploaded');
+//       }
+
+//       const fileName = `${Date.now()}-${file.originalname}`;
+//       const bucketName = 'book_covers';
+
+//       // Upload the image to Supabase storage
+//       const { data, error } = await supabase.storage
+//           .from(bucketName)
+//           .upload(fileName, file.buffer, {
+//               contentType: file.mimetype,
+//               upsert: false,
+//           });
+//       console.log(data)
+
+//       if (error) {
+//           console.error('Supabase upload error:', error);
+//           return res.status(500).send('Error uploading image');
+//       }
+
+//       // Get the public URL for the uploaded image
+//       const { data: publicUrl, error: urlError } = supabase.storage.from(bucketName).getPublicUrl(data.fullPath);
+
+//       if (urlError) {
+//           console.error('Error getting public URL:', urlError);
+//           return res.status(500).send('Error fetching public URL');
+//       }
+
+
+//       console.log(bookId)
+//       // Optional: Store the image URL in your Supabase database (books table)
+//       const { data: dbData, error: dbError } = await supabase
+//           .from('profile_books_testing')  // Assuming 'books' is the table storing book information
+//           .update({ cover_url: publicUrl })  // Update the cover image URL for the book
+//           .eq( 'id', bookId );  // Match the book ID to update the correct entry
+
+//       if (dbError) {
+//           console.error('Database update error:', dbError);
+//           return res.status(500).send('Error saving image URL to database');
+//       }
+
+//       // Respond with the public URL of the uploaded image
+//       res.status(200).json({ message: 'Upload successful', imageUrl: publicUrl });
+//   } catch (err) {
+//       console.error('Error:', err.message);
+//       res.status(500).json({ error: err.message });
+//   }
+// });
+
+app.post('/api/upload-cover', uploadMemory.single('image'), async (req, res) => {
+  try {
+    const { bookId } = req.body; // Get bookId from the form data
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).send('No file uploaded');
+    }
+
+    const fileName = `${Date.now()}-${file.originalname}`;
+    const bucketName = 'book_covers';
+
+    // Upload the image to Supabase storage
+    const { data, error } = await supabase.storage
+      .from(bucketName)
+      .upload(fileName, file.buffer, {
+        contentType: file.mimetype,
+        upsert: false,
+      });
+
+    if (error) {
+      console.error('Supabase upload error:', error);
+      return res.status(500).send('Error uploading image');
+    }
+
+    // Get the public URL for the uploaded image
+    const { data: publicUrl, error: urlError } = supabase.storage.from(bucketName).getPublicUrl(data.fullPath);
+
+    if (urlError) {
+      console.error('Error getting public URL:', urlError);
+      return res.status(500).send('Error fetching public URL');
+    }
+
+    // Optional: Store the image URL in your Supabase database (books table)
+    const { data: dbData, error: dbError } = await supabase
+      .from('profile_books_testing') // Assuming 'profile_books_testing' is the table storing book information
+      .update({ cover_url: publicUrl, image_name: fileName }) // Update the cover image URL for the book
+      .eq('id', bookId); // Match the book ID to update the correct entry
+
+    if (dbError) {
+      console.error('Database update error:', dbError);
+      return res.status(500).send('Error saving image URL to database');
+    }
+
+    // Respond with the public URL of the uploaded image
+    res.status(200).json({ message: 'Upload successful', imageUrl: publicUrl });
+  } catch (err) {
+    console.error('Error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+// API route to compare the uploaded image with book2.jpg
+app.post('/api/compare-image', upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No image file uploaded' });
+    }
+
+    const filePath = req.file.path;
+    console.log('File saved to:', filePath); // Log the file path for debugging
+
+    // Create a FormData object to send the image
+    const formData = new FormData();
+    const fileStream = fs.createReadStream(filePath);
+
+    // Append the file stream to FormData
+    formData.append('file', fileStream, req.file.originalname);
+
+    // Get headers from FormData
+    const headers = formData.getHeaders();
+
+    // Send the image to the Flask server for processing
+    const flaskResponse = await axios.post(flaskServerUrl, formData, { headers });
+
+    // Clean up the uploaded file from the server
+    fs.unlinkSync(filePath); // Delete the file after processing
+
+    // Return the response from Flask back to the frontend
+    return res.json(flaskResponse.data);
+  } catch (error) {
+    console.error('Error in comparing images:', error);
+    return res.status(500).json({ error: 'An error occurred while processing the image' });
   }
 });

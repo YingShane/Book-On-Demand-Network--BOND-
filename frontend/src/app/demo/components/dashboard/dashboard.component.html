@@ -28,11 +28,12 @@
                 <p>{{ user.age }}</p>
             </div>
             <div class="flex justify-content-end">
-                <button pButton label="Edit" icon="pi pi-pencil" class="p-button-primary edit-button" (click)="openEditUserDialog()"></button>
+                <button pButton label="Edit" icon="pi pi-pencil" class="p-button-primary edit-button"
+                    (click)="openEditUserDialog()"></button>
             </div>
         </div>
     </div>
-    
+
 
     <!-- Bottom Section: Registered Books -->
     <div class="col-12">
@@ -52,23 +53,27 @@
                 </ng-template>
                 <ng-template pTemplate="body" let-book>
                     <tr class="book-row" [ngClass]="{'banned-book': book.merit_points === 0}">
-                        <td>{{ book.title }}</td> 
-                        <td>{{ book.author }}</td> 
-                        <td>{{ book.genre }}</td> 
-                        <td>{{ book.publisher }}</td> 
-                        <td>{{ book.publication_year }}</td> 
-                        <td>{{ book.status }}</td> 
-                        <td>{{ book.meeting_location }}</td> 
+                        <td>{{ book.title }}</td>
+                        <td>{{ book.author }}</td>
+                        <td>{{ book.genre }}</td>
+                        <td>{{ book.publisher }}</td>
+                        <td>{{ book.publication_year }}</td>
+                        <td>{{ book.status }}</td>
+                        <td>{{ book.meeting_location }}</td>
                         <td>
-                            <button pButton icon="pi pi-pencil" class="p-button-text edit-button" (click)="openEditDialog(book)"></button>
-                            <button pButton icon="pi pi-trash" class="p-button-text delete-button" (click)="deleteBook(book.id)"></button>
-                            <button pButton label="View Details" icon="pi pi-info-circle" class="p-button-text view-books-button" (click)="openViewDialog(book)"></button>
+                            <button pButton icon="pi pi-pencil" class="p-button-text edit-button"
+                                (click)="openEditDialog(book)"></button>
+                            <button pButton icon="pi pi-trash" class="p-button-text delete-button"
+                                (click)="deleteBook(book.id)"></button>
+                            <button pButton label="View Details" icon="pi pi-info-circle"
+                                class="p-button-text view-books-button" (click)="openViewDialog(book)"></button>
                         </td>
                     </tr>
                 </ng-template>
             </p-table>
             <div class="flex justify-content-end mt-4">
-                <button pButton label="Add New Book" icon="pi pi-plus" class="p-button-success add-book-button" (click)="openAddBookDialog()"></button>
+                <button pButton label="Add New Book" icon="pi pi-plus" class="p-button-success add-book-button"
+                    (click)="openAddBookDialog()"></button>
             </div>
         </div>
     </div>
@@ -76,73 +81,65 @@
 
 
 <!-- Add Book -->
-<p-dialog 
-    *ngIf="addBookStage === 1"
-    header="Add New Book" 
-    [(visible)]="displayAddDialog" 
-    [modal]="true" 
-    [responsive]="true" 
-    [style]="{width: '300px', height: '500px'}">
-    
-    <!-- First Stage: Book Details Form -->
-    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
-        <div class="field" style="width: 100%; max-width: 250px;">
-            <label for="title">Title</label>
-            <input id="title" type="text" [(ngModel)]="newBook.title" required style="width: 100%;" />
+<!-- Stage 1: Book Details Form with Image Upload -->
+<p-dialog *ngIf="addBookStage === 1" header="Add New Book" [(visible)]="displayAddDialog" [modal]="true"
+    [responsive]="true" [style]="{width: '500px', height: '600px'}">
+    <div style="display: flex; justify-content: space-between; height: 100%; gap: 10px;">
+        <div style="display: flex; flex-direction: column; width: 35%; align-items: center; justify-content: center; border: 1px dashed #ccc; padding: 10px; border-radius: 5px;">
+            <label for="book-image" style="margin-bottom: 10px; font-weight: bold;">Upload Image</label>
+            <input id="book-image" type="file" accept="image/*" (change)="onImageUpload($event)" style="margin-bottom: 10px;" />
+            <div style="width: 100%; height: 150px; display: flex; align-items: center; justify-content: center; border: 1px dashed #ccc; border-radius: 5px;">
+                <img *ngIf="previewImage" [src]="previewImage" alt="Book Preview"
+                    style="max-width: 100%; max-height: 100%; object-fit: cover;" />
+                <span *ngIf="!previewImage" style="color: #aaa; font-size: 12px;">No Image Selected</span>
+            </div>
         </div>
-        <div class="field" style="width: 100%; max-width: 250px;">
-            <label for="author">Author</label>
-            <input id="author" type="text" [(ngModel)]="newBook.author" required style="width: 100%;" />
-        </div>
-        <div class="field" style="width: 100%; max-width: 250px;">
-            <label for="genre">Genre</label>
-            <input id="genre" type="text" [(ngModel)]="newBook.genre" required style="width: 100%;" />
-        </div>
-        <div class="field" style="width: 100%; max-width: 250px;">
-            <label for="publisher">Publisher</label>
-            <input id="publisher" type="text" [(ngModel)]="newBook.publisher" required style="width: 100%;" />
-        </div>
-        <div class="field" style="width: 100%; max-width: 250px;">
-            <label for="publication_year">Publication Year</label>
-            <input id="publication_year" type="number" [(ngModel)]="newBook.publication_year" required style="width: 100%;" />
+
+        <div style="display: flex; flex-direction: column; width: 60%; justify-content: center;">
+            <div class="field" style="width: 100%;">
+                <label for="title">Title</label>
+                <input id="title" type="text" [(ngModel)]="newBook.title" required style="width: 100%;" />
+            </div>
+            <div class="field" style="width: 100%;">
+                <label for="author">Author</label>
+                <input id="author" type="text" [(ngModel)]="newBook.author" required style="width: 100%;" />
+            </div>
+            <div class="field" style="width: 100%;">
+                <label for="genre">Genre</label>
+                <input id="genre" type="text" [(ngModel)]="newBook.genre" required style="width: 100%;" />
+            </div>
+            <div class="field" style="width: 100%;">
+                <label for="publisher">Publisher</label>
+                <input id="publisher" type="text" [(ngModel)]="newBook.publisher" required style="width: 100%;" />
+            </div>
+            <div class="field" style="width: 100%;">
+                <label for="publication_year">Publication Year</label>
+                <input id="publication_year" type="number" [(ngModel)]="newBook.publication_year" required
+                    style="width: 100%;" />
+            </div>
         </div>
     </div>
+
     <p-footer>
         <button pButton label="Next" icon="pi pi-arrow-right" (click)="proceedToMap()"></button>
         <button pButton label="Cancel" icon="pi pi-times" (click)="displayAddDialog = false"></button>
     </p-footer>
 </p-dialog>
 
-<p-dialog 
-    *ngIf="addBookStage === 2"
-    header="Add New Book" 
-    [(visible)]="displayAddDialog" 
-    [modal]="true" 
-    [responsive]="true" 
-    [style]="{width: '1300px', height: '1000px'}">
-    
-    <!-- Search Bar Section -->
+<!-- Stage 2: Map Selection and Finalization -->
+<p-dialog *ngIf="addBookStage === 2" header="Add New Book" [(visible)]="displayAddDialog" [modal]="true"
+    [responsive]="true" [style]="{width: '1300px', height: '1000px'}">
     <div style="padding: 10px;">
-        <input 
-            type="text" 
-            pInputText 
-            [(ngModel)]="searchQuery" 
-            placeholder="Search for a location..." 
-            (keyup.enter)="searchLocation()"
-            style="width: 300px; z-index: 999; position: relative;" />
-        
-        <button 
-            pButton 
-            [label]="markerSet ? 'Remove Marker' : 'Set Marker'" 
-            (click)="toggleMarker()" 
+        <input type="text" pInputText [(ngModel)]="searchQuery" placeholder="Search for a location..."
+            (keyup.enter)="searchLocation()" style="width: 300px; z-index: 999; position: relative;" />
+        <button pButton [label]="markerSet ? 'Remove Marker' : 'Set Marker'" (click)="toggleMarker()"
             style="margin-left: 10px; position: 'relative'; z-index: 999;"></button>
     </div>
-    
-    <!-- Second Stage: Map Selection -->
+
     <div id="map-container" style="height: 100%; display: flex; flex-direction: column;">
         <app-map-common #mapCommon style="flex: 1;"></app-map-common>
     </div>
-    
+
     <p-footer>
         <button pButton label="Submit" icon="pi pi-check" (click)="addBook(selectedBook.id)"></button>
         <button pButton label="Back" icon="pi pi-arrow-left" (click)="goBackToDetails()"></button>
@@ -151,15 +148,11 @@
 
 
 
+
 <!-- Edit Book -->
-<p-dialog 
-    *ngIf="editBookStage === 1" 
-    header="Edit Book Details" 
-    [(visible)]="displayEditDialog" 
-    [modal]="true" 
-    [responsive]="true" 
-    [style]="{width: '400px', height: '500px'}">
-    
+<p-dialog *ngIf="editBookStage === 1" header="Edit Book Details" [(visible)]="displayEditDialog" [modal]="true"
+    [responsive]="true" [style]="{width: '400px', height: '500px'}">
+
     <!-- First Stage: Book Details Form -->
     <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
         <div class="field" style="width: 100%; max-width: 300px;">
@@ -180,7 +173,8 @@
         </div>
         <div class="field" style="width: 100%; max-width: 300px;">
             <label for="publication_year">Publication Year</label>
-            <input id="publication_year" type="number" [(ngModel)]="selectedBook.publication_year" required style="width: 100%;" />
+            <input id="publication_year" type="number" [(ngModel)]="selectedBook.publication_year" required
+                style="width: 100%;" />
         </div>
     </div>
     <p-footer>
@@ -189,41 +183,60 @@
     </p-footer>
 </p-dialog>
 
-<p-dialog 
-    *ngIf="editBookStage === 2" 
-    header="Edit Meeting Location" 
-    [(visible)]="displayEditDialog" 
-    [modal]="true" 
-    [responsive]="true" 
-    [style]="{width: '1300px', height: '1000px'}">
-    
-    <!-- Search Bar Section -->
-    <div style="padding: 10px;">
-        <input 
-            type="text" 
-            pInputText 
-            [(ngModel)]="searchQuery" 
-            placeholder="Search for a location..." 
-            (keyup.enter)="searchLocation()" 
-            style="width: 300px; z-index: 999; position: relative;" />
-        
-        <button 
-            pButton 
-            [label]="markerSet ? 'Remove Marker' : 'Set Marker'" 
-            (click)="toggleMarker()" 
-            style="margin-left: 10px; position: 'relative'; z-index: 999;"></button>
+<p-dialog *ngIf="editBookStage === 1" header="Edit Book Details" [(visible)]="displayEditDialog" [modal]="true"
+    [responsive]="true" [style]="{width: '500px', height: '500px'}">
+
+
+
+    <!-- First Stage: Book Details Form with Image Upload -->
+    <div style="display: flex; justify-content: space-between; height: 100%; gap: 10px;">
+        <!-- Image Upload Section -->
+        <div
+            style="display: flex; flex-direction: column; width: 35%; align-items: center; justify-content: center; border: 1px dashed #ccc; padding: 10px; border-radius: 5px;">
+            <label for="book-image-edit" style="margin-bottom: 10px; font-weight: bold;">Upload Image</label>
+            <input id="book-image-edit" type="file" accept="image/*" (change)="onEditImageUpload($event)"
+                style="margin-bottom: 10px;" />
+            <div
+                style="width: 100%; height: 150px; display: flex; align-items: center; justify-content: center; border: 1px dashed #ccc; border-radius: 5px;">
+                <img *ngIf="editPreviewImage" [src]="editPreviewImage" alt="Book Preview"
+                    style="max-width: 100%; max-height: 100%; object-fit: cover;" />
+                <span *ngIf="!editPreviewImage" style="color: #aaa; font-size: 12px;">No Image Selected</span>
+            </div>
+        </div>
+        <!-- Form Section -->
+        <div style="display: flex; flex-direction: column; width: 60%; justify-content: center;">
+            <div class="field" style="width: 100%;">
+                <label for="title">Title</label>
+                <input id="title" type="text" [(ngModel)]="selectedBook.title" required style="width: 100%;" />
+            </div>
+            <div class="field" style="width: 100%;">
+                <label for="author">Author</label>
+                <input id="author" type="text" [(ngModel)]="selectedBook.author" required style="width: 100%;" />
+            </div>
+            <div class="field" style="width: 100%;">
+                <label for="genre">Genre</label>
+                <input id="genre" type="text" [(ngModel)]="selectedBook.genre" required style="width: 100%;" />
+            </div>
+            <div class="field" style="width: 100%;">
+                <label for="publisher">Publisher</label>
+                <input id="publisher" type="text" [(ngModel)]="selectedBook.publisher" required style="width: 100%;" />
+            </div>
+            <div class="field" style="width: 100%;">
+                <label for="publication_year">Publication Year</label>
+                <input id="publication_year" type="number" [(ngModel)]="selectedBook.publication_year" required
+                    style="width: 100%;" />
+            </div>
+        </div>
+
+
     </div>
-    
-    <!-- Second Stage: Map Selection -->
-    <div id="map-container" style="height: 100%; display: flex; flex-direction: column;">
-        <app-map-common #mapCommon style="flex: 1;"></app-map-common>
-    </div>
-    
+
     <p-footer>
-        <button pButton label="Submit" icon="pi pi-check" (click)="editBook(selectedBook.id)"></button>
-        <button pButton label="Back" icon="pi pi-arrow-left" (click)="goBackToEditDetails()"></button>
+        <button pButton label="Next" icon="pi pi-arrow-right" (click)="proceedToEditMap()"></button>
+        <button pButton label="Cancel" icon="pi pi-times" (click)="displayEditDialog = false"></button>
     </p-footer>
 </p-dialog>
+
 
 <!-- Display book -->
 <p-dialog header="Book Details" [(visible)]="displayDetailDialog" [modal]="true" [responsive]="true">
@@ -254,7 +267,8 @@
     </p-footer>
 </p-dialog>
 
-<p-dialog header="Edit User Information" [(visible)]="displayEditUserDialog" [modal]="true" [responsive]="true" [style]="{width: '400px'}">
+<p-dialog header="Edit User Information" [(visible)]="displayEditUserDialog" [modal]="true" [responsive]="true"
+    [style]="{width: '400px'}">
     <div *ngIf="editableUser">
         <div class="field">
             <label for="firstName">First Name</label>

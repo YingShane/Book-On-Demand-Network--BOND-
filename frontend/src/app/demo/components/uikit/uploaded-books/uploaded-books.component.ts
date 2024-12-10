@@ -26,6 +26,8 @@ export class UploadedBooksComponent implements OnInit {
     searchCriterion: string = 'title';
     selectedGenres: string[] = [];
     showGenrePopup: boolean = false;
+    comparisonResult: any;
+    selectedFile: File | null = null;
 
     // Advanced Search Variables
     showAdvancedSearchPopup: boolean = false;
@@ -34,31 +36,40 @@ export class UploadedBooksComponent implements OnInit {
     advancedSearchCriterion: string = 'title'; // Default criterion for advanced search
     filterByOptions: SelectItem[] = []; // Options for filtering (Author or Title)
 
-    constructor(private http: HttpClient, private route: ActivatedRoute) {}
+    constructor(private http: HttpClient, private route: ActivatedRoute) { }
 
     ngOnInit(): void {
         this.route.paramMap.subscribe((params) => {
             this.userId = params.get('id');
             this.http
-                .get<any[]>(`${this.apiUrl}/public_books`)
+                .get<any[]>(`${this.apiUrl}/public_books`) // Adjust if you're fetching the books with an API call
                 .subscribe((data) => {
-                    this.allBooks = data;
-                    this.books = [...this.allBooks];
+                    
+                    this.books = data.map(book => {
+                        console.log(book.image_name)
+                        // Assuming book.cover_url contains the file name or metadata
+                        book.image = `https://oztdufozgcxjfmmbyqtz.supabase.co/storage/v1/object/public/book_covers/${book.image_name}`;
+                        return book;
+                    });
+                    console.log(this.books)
                     this.updateGenreOptions();
                 });
         });
-
+        
         this.sortOptions = [
             { label: 'Title Ascending', value: 'title' },
             { label: 'Title Descending', value: '!title' },
         ];
-
+    
         // Initialize filter options
         this.filterByOptions = [
             { label: 'Title', value: 'title' },
             { label: 'Author', value: 'author' },
         ];
     }
+    
+    
+    
 
     updateGenreOptions(): void {
         const genres = Array.from(
@@ -189,10 +200,53 @@ export class UploadedBooksComponent implements OnInit {
     resetAdvancedSearch(): void {
         this.advancedSearchInput = '';
         this.advancedSearchCriterion = null;
-        
+
         this.advancedSortField = null;
     }
 
+    // This method is called when a file is selected
+    onImageUpload(event: any): void {
+        const file = event.target.files[0];
+        if (file) {
+            this.selectedFile = file;  // Store the selected file
+        }
+    }
 
-    
+    // This method is called when the submit button is clicked
+    onSubmit(): void {
+        if (this.selectedFile) {
+            this.uploadImageForComparison(this.selectedFile);
+        } else {
+            alert('Please upload an image first!');
+        }
+    }
+
+    // Call the backend API to process the uploaded image and compare with the reference image (book2.jpg)
+    uploadImageForComparison(file: File): void {
+        const formData = new FormData();
+        formData.append('image', file, file.name);
+
+        // Log the contents of formData manually
+        formData.forEach((value, key) => {
+            if (value instanceof File) {
+                console.log(`${key}: ${value.name}`);
+            } else {
+                console.log(`${key}: ${value}`);
+            }
+        });
+
+        // Call the backend API for comparison
+        this.http.post<any>(`${this.apiUrl}/compare-image`, formData).subscribe(
+            (response) => {
+                // Store the comparison result to display in the UI
+                this.comparisonResult = response;
+            },
+            (error) => {
+                console.error('Image upload failed', error);
+            }
+        );
+    }
+
+
+
 }

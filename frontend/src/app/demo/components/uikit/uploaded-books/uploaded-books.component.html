@@ -2,67 +2,36 @@
     <div class="col-12">
         <div class="card">
             <h5>Browse Books</h5>
-            <p-dataView
-                #dv
-                [value]="books"
-                [paginator]="true"
-                [rows]="9"
-                filterBy="title"
-                [sortField]="sortField"
-                [sortOrder]="sortOrder"
-                layout="grid"
-            >
+            <p-dataView #dv [value]="books" [paginator]="true" [rows]="9" filterBy="title" [sortField]="sortField"
+                [sortOrder]="sortOrder" layout="grid">
                 <ng-template pTemplate="header">
-                    <div
-                        class="flex flex-column md:flex-row md:justify-content-between gap-2"
-                    >
+                    <div class="flex flex-column md:flex-row md:justify-content-between gap-2">
                         <!-- Filter by Genre (Dropdown with Radio Buttons) -->
                         <div>
                             <!-- Button to open the popup -->
-                            <button
-                                pButton
-                                label="Select Genres"
-                                class="p-button-primary w-full"
-                                (click)="showGenrePopup = true"
-                            ></button>
+                            <button pButton label="Select Genres" class="p-button-primary w-full"
+                                (click)="showGenrePopup = true"></button>
 
                             <!-- Genre Selection Popup -->
-                            <p-dialog
-                                header="Select Genres"
-                                [(visible)]="showGenrePopup"
-                                [modal]="true"
-                                [closable]="true"
-                                [style]="{ width: '90vw', maxWidth: '600px' }"
-                                [draggable]="false"
-                            >
+                            <p-dialog header="Select Genres" [(visible)]="showGenrePopup" [modal]="true"
+                                [closable]="true" [style]="{ width: '90vw', maxWidth: '600px' }" [draggable]="false">
                                 <!-- Genre Cards -->
-                                <div
-                                    class="p-fluid grid"
-                                    style="
+                                <div class="p-fluid grid" style="
                                         gap: 10px;
                                         display: flex;
                                         flex-wrap: wrap;
                                         justify-content: center;
-                                    "
-                                >
+                                    ">
                                     <!-- Genre Cards -->
-                                    <div
-                                        *ngFor="let genre of genreOptions"
-                                        class="col-12 sm:col-6 md:col-3"
-                                        (click)="
+                                    <div *ngFor="let genre of genreOptions" class="col-12 sm:col-6 md:col-3" (click)="
                                             toggleGenreSelection(genre.value)
-                                        "
-                                        [ngClass]="{
+                                        " [ngClass]="{
                                             'selected-card':
                                                 selectedGenres.includes(
                                                     genre.value
                                                 )
-                                        }"
-                                        style="cursor: pointer; padding: 10px"
-                                    >
-                                        <div
-                                            class="card p-2 text-center surface-card shadow-2"
-                                        >
+                                        }" style="cursor: pointer; padding: 10px">
+                                        <div class="card p-2 text-center surface-card shadow-2">
                                             <div class="font-bold text-lg">
                                                 {{ genre.label }}
                                             </div>
@@ -71,60 +40,56 @@
                                 </div>
 
                                 <!-- Centered Filter Button -->
-                                <div
-                                    class="filter-button-container"
-                                    style="
+                                <div class="filter-button-container" style="
                                         display: flex;
                                         justify-content: center;
                                         margin-top: 20px;
-                                    "
-                                >
-                                    <button
-                                        pButton
-                                        label="Filter Genres"
-                                        class="p-button-primary"
-                                        (click)="onFilterGenres()"
-                                    ></button>
+                                    ">
+                                    <button pButton label="Filter Genres" class="p-button-primary"
+                                        (click)="onFilterGenres()"></button>
                                 </div>
                             </p-dialog>
                         </div>
 
                         <!-- Sort Dropdown -->
-                        <p-dropdown
-                            [options]="sortOptions"
-                            placeholder="Sort By Title"
-                            (onChange)="onSortChange($event)"
-                        ></p-dropdown>
+                        <p-dropdown [options]="sortOptions" placeholder="Sort By Title"
+                            (onChange)="onSortChange($event)"></p-dropdown>
 
                         <!-- Filter Criterion Dropdown -->
-                        <p-dropdown
-                            [options]="[
+                        <p-dropdown [options]="[
                                 { label: 'Title', value: 'title' },
                                 { label: 'Author', value: 'author' }
-                            ]"
-                            (onChange)="onSearchCriterionChange($event)"
-                            [ngModel]="searchCriterion"
-                            placeholder="Filter By"
-                            style="width: 150px"
-                        ></p-dropdown>
+                            ]" (onChange)="onSearchCriterionChange($event)" [ngModel]="searchCriterion"
+                            placeholder="Filter By" style="width: 150px"></p-dropdown>
 
                         <!-- Search Bar -->
-                        <input
-                            type="search"
-                            pInputText
-                            placeholder="Search by {{
+                        <input type="search" pInputText placeholder="Search by {{
                                 searchCriterion | titlecase
-                            }}"
-                            (keydown.enter)="onFilter($event)"
-                        />
+                            }}" (keydown.enter)="onFilter($event)" />
+
+                        <!-- Image Upload Section -->
+                        <div class="field">
+                            <label for="imageUpload">Upload an Image to Search</label>
+                            <input type="file" id="imageUpload" (change)="onImageUpload($event)" accept="image/*" />
+                          </div>
+                          
+                          <!-- Add a submit button to trigger the upload action -->
+                          <div class="field">
+                            <button type="button" (click)="onSubmit()">Submit</button>
+                          </div>
+                        
+                        <!-- Display similarity results -->
+                        <div *ngIf="comparisonResult">
+                            <h3>Comparison Results:</h3>
+                            <p>pHash Similarity: {{ comparisonResult.phash_similarity }}</p>
+                            <p>Levenshtein Similarity: {{ comparisonResult.lev_similarity }}</p>
+                            <p>Levenshtein Distance: {{ comparisonResult.lev_distance }}</p>
+                        </div>
+
 
                         <!-- Advanced Search Button -->
-                        <button
-                            pButton
-                            label="Advanced Search"
-                            class="p-button-secondary"
-                            (click)="showAdvancedSearchPopup = true"
-                        ></button>
+                        <button pButton label="Advanced Search" class="p-button-secondary"
+                            (click)="showAdvancedSearchPopup = true"></button>
                     </div>
                 </ng-template>
 
@@ -132,14 +97,9 @@
                     <div class="grid grid-nogutter">
                         <div class="col-12 md:col-4" *ngFor="let book of books">
                             <div class="card m-3 border-1 surface-border">
-                                <div
-                                    class="flex flex-column align-items-center text-center mb-3"
-                                >
-                                    <img
-                                        [src]="book.image"
-                                        [alt]="book.title"
-                                        class="w-9 shadow-2 my-3 mx-0"
-                                    />
+                                <div class="flex flex-column align-items-center text-center mb-3">
+                                    <!-- Display the image using the book.image URL -->
+                                    <img [src]="book.image" [alt]="book.title" class="w-9 shadow-2 my-3 mx-0" />
                                     <div class="text-2xl font-bold">
                                         {{ book.title }}
                                     </div>
@@ -148,106 +108,58 @@
                                     </div>
                                     <div class="flex align-items-center">
                                         <i class="pi pi-tag mr-2"></i>
-                                        <span class="font-semibold">{{
-                                            book.genre
-                                        }}</span>
+                                        <span class="font-semibold">{{ book.genre }}</span>
                                     </div>
                                 </div>
-                                <!-- Button to check the location -->
-                                <button
-                                    pButton
-                                    label="Check Location"
-                                    class="p-button-primary"
-                                    (click)="openMapPopup(book)"
-                                ></button>
-                                <button
-                                    pButton
-                                    label="Borrow Book"
-                                    class="p-button-secondary ml-2"
-                                    (click)="borrowBook(book)"
-                                ></button>
+                                <button pButton label="Check Location" class="p-button-primary" (click)="openMapPopup(book)"></button>
+                                <button pButton label="Borrow Book" class="p-button-secondary ml-2" (click)="borrowBook(book)"></button>
                             </div>
                         </div>
                     </div>
                 </ng-template>
+                
             </p-dataView>
         </div>
     </div>
 </div>
 
 <!-- Map Popup -->
-<p-dialog
-    header="Meeting Location"
-    [(visible)]="displayMapDialog"
-    [modal]="true"
-    [responsive]="true"
-    [closable]="true"
-    [style]="{ width: '1300px', height: '1000px' }"
-    [contentStyle]="{ position: 'relative', overflow: 'hidden' }"
->
+<p-dialog header="Meeting Location" [(visible)]="displayMapDialog" [modal]="true" [responsive]="true" [closable]="true"
+    [style]="{ width: '1300px', height: '1000px' }" [contentStyle]="{ position: 'relative', overflow: 'hidden' }">
     <!-- Map Section -->
-    <div
-        id="map-container"
-        style="height: 100%; position: relative; z-index: 0"
-    >
-        <app-map-common
-            #mapCommon
-            [dialogVisible]="displayMapDialog"
-            style="flex: 1"
-        ></app-map-common>
+    <div id="map-container" style="height: 100%; position: relative; z-index: 0">
+        <app-map-common #mapCommon [dialogVisible]="displayMapDialog" style="flex: 1"></app-map-common>
     </div>
 </p-dialog>
 
 <!-- Advanced Search Popup -->
-<p-dialog
-    header="Advanced Search"
-    [(visible)]="showAdvancedSearchPopup"
-    [modal]="true"
-    [closable]="true"
-    [style]="{ width: '90vw', maxWidth: '600px' }"
-    [draggable]="false"
->
+<p-dialog header="Advanced Search" [(visible)]="showAdvancedSearchPopup" [modal]="true" [closable]="true"
+    [style]="{ width: '90vw', maxWidth: '600px' }" [draggable]="false">
     <div class="p-fluid">
         <!-- Search Input -->
         <div class="field">
             <label for="advancedSearchInput">Search</label>
-            <input
-                id="advancedSearchInput"
-                type="text"
-                pInputText
-                [(ngModel)]="advancedSearchInput"
-                placeholder="Search by {{
+            <input id="advancedSearchInput" type="text" pInputText [(ngModel)]="advancedSearchInput" placeholder="Search by {{
                     advancedSearchCriterion | titlecase
-                }}"
-            />
+                }}" />
         </div>
 
         <!-- Filter By Dropdown -->
         <div class="field">
             <label for="filterBy">Filter By</label>
-            <p-dropdown
-                [options]="filterByOptions"
-                (onChange)="onAdvancedSearchCriterionChange($event)"
-                [ngModel]="advancedSearchCriterion"
-                id="filterBy"
-                placeholder="Select Filter"
-                style="width: 100%"
-            ></p-dropdown>
+            <p-dropdown [options]="filterByOptions" (onChange)="onAdvancedSearchCriterionChange($event)"
+                [ngModel]="advancedSearchCriterion" id="filterBy" placeholder="Select Filter"
+                style="width: 100%"></p-dropdown>
         </div>
 
         <!-- Genre Selection -->
         <div class="field">
             <label>Genres</label>
             <div class="p-fluid grid" style="gap: 10px">
-                <div
-                    *ngFor="let genre of genreOptions"
-                    class="col-12 sm:col-6 md:col-3"
-                    (click)="toggleGenreSelection(genre.value)"
-                    [ngClass]="{
+                <div *ngFor="let genre of genreOptions" class="col-12 sm:col-6 md:col-3"
+                    (click)="toggleGenreSelection(genre.value)" [ngClass]="{
                         'selected-card': selectedGenres.includes(genre.value)
-                    }"
-                    style="cursor: pointer; padding: 10px"
-                >
+                    }" style="cursor: pointer; padding: 10px">
                     <div class="card p-2 text-center surface-card shadow-2">
                         <div class="font-bold text-lg">{{ genre.label }}</div>
                     </div>
@@ -258,21 +170,12 @@
         <!-- Sort Options -->
         <div class="field">
             <label>Sort By</label>
-            <p-dropdown
-                [options]="sortOptions"
-                [(ngModel)]="advancedSortField"
-                placeholder="Sort By"
-            ></p-dropdown>
+            <p-dropdown [options]="sortOptions" [(ngModel)]="advancedSortField" placeholder="Sort By"></p-dropdown>
         </div>
 
         <!-- Apply Filters Button -->
         <div class="field text-center">
-            <button
-                pButton
-                label="Apply Filters"
-                class="p-button-primary"
-                (click)="onApplyAdvancedSearch()"
-            ></button>
+            <button pButton label="Apply Filters" class="p-button-primary" (click)="onApplyAdvancedSearch()"></button>
         </div>
     </div>
 </p-dialog>

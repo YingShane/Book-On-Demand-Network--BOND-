@@ -7,19 +7,21 @@ import { LayoutService } from 'src/app/layout/service/app.layout.service';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import { MessageService } from 'primeng/api';
-import { Observable } from 'rxjs'; 
+import { Observable } from 'rxjs';
 import { MapCommonComponent } from 'src/app/map-common/map-common.component';
 
 @Component({
     templateUrl: './dashboard.component.html',
-    styleUrls: ['./dashboard.component.css'] ,
+    styleUrls: ['./dashboard.component.css'],
     providers: [MessageService]
 })
 export class DashboardComponent implements OnInit, OnDestroy {
     @ViewChild(MapCommonComponent) mapCommon: MapCommonComponent;
 
     apiUrl = environment.apiUrl;
-    displayAddDialog: boolean = false; 
+    previewImage: string | null = null;
+    editPreviewImage: string | null = null;
+    displayAddDialog: boolean = false;
     displayEditDialog: boolean = false;
     displayDetailDialog: boolean = false;
     book: any;
@@ -34,9 +36,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
     };
     markerSet: boolean = false;
     markers: Map<string, mapboxgl.Marker> = new Map();
-
     displayEditUserDialog: boolean = false;
     editableUser: any = {};
+    bookTitle: string = '';
+    selectedFile: File | null = null;
 
     data: any;
 
@@ -54,12 +57,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
     editBookStage: number = 1;
     searchQuery: string = '';
 
-    constructor(private productService: ProductService, public layoutService: LayoutService, private http: HttpClient, private messageService: MessageService ) {
+    constructor(private productService: ProductService, public layoutService: LayoutService, private http: HttpClient, private messageService: MessageService) {
         this.subscription = this.layoutService.configUpdate$
-        .pipe(debounceTime(25))
-        .subscribe((config) => {
-            this.initChart();
-        });
+            .pipe(debounceTime(25))
+            .subscribe((config) => {
+                this.initChart();
+            });
     }
 
     ngOnInit() {
@@ -135,9 +138,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     async fetchBooksData(): Promise<void> {
         try {
-            const response = await this.http.get(`${this.apiUrl}/books`).toPromise(); 
+            const response = await this.http.get(`${this.apiUrl}/books`).toPromise();
             this.book = response; // Assign the fetched data to the data property
-            console.log(this.book)
         } catch (error) {
             console.error('Error fetching book data:', error);
         }
@@ -156,57 +158,62 @@ export class DashboardComponent implements OnInit, OnDestroy {
     async addBook() {
         try {
             const meetingCoordinates = await this.mapCommon.getCoordinatesFromAddress(this.searchQuery);
-            const meetingLocation = this.searchQuery; 
-            const [longitude, latitude] = meetingCoordinates; 
+            const meetingLocation = this.searchQuery;
+            const [longitude, latitude] = meetingCoordinates;
 
             // Include meeting_location in the data sent to the backend
-            const response = await this.http.post(`${this.apiUrl}/newBook`, { 
+            const response = await this.http.post(`${this.apiUrl}/newBook`, {
                 ...this.newBook,  // Include the rest of the book data
-                meeting_location: meetingLocation ,
+                meeting_location: meetingLocation,
                 meeting_coordinates: [longitude, latitude]
             }).toPromise();
-            
+
             // Ensure that the response is what you expect
             if (response) {
                 this.book.push(response); // Update local data array with the new book
+                
+                
                 this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Book added successfully!' });
+
             }
-    
             this.displayAddDialog = false; // Close the dialog
-            this.fetchBooksData(); // Refresh the data
+            await this.fetchBooksData(); // Refresh the data
+            console.log(this.book);
+            this.uploadBookCover(this.book[this.book.length - 1].id);
+
         } catch (error) {
             console.error('Error adding book:', error);
             this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to add book: ' + (error.message || 'Unknown error') });
         }
     }
-    
+
 
     async deleteBook(bookId: string) {
         try {
             const response = await this.http.delete(`${this.apiUrl}/deleteBook/${bookId}`).toPromise();
             this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Book deleted successfully!' });
-            
+
             // Optionally remove the book from local data array
             this.book = this.book.filter(book => book.id !== bookId); // Adjust this based on your book object structure
         } catch (error) {
             console.error('Error deleting book:', error);
             this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to delete book: ' + (error.message || 'Unknown error') });
         }
-    }    
-    
+    }
+
     async editBook(bookId: string) {
         try {
-            
+
             const meetingCoordinates = await this.mapCommon.getCoordinatesFromAddress(this.searchQuery);
-            const meetingLocation = this.searchQuery; 
+            const meetingLocation = this.searchQuery;
             const [longitude, latitude] = meetingCoordinates; // Destructure after awaiting the promise
 
-            const response = await this.http.put(`${this.apiUrl}/editBook/${bookId}`, { 
+            const response = await this.http.put(`${this.apiUrl}/editBook/${bookId}`, {
                 ...this.selectedBook,  // Include the rest of the book data
-                meeting_location: meetingLocation ,
+                meeting_location: meetingLocation,
                 meeting_coordinates: [longitude, latitude]
             }).toPromise();
-            
+
             // Ensure that the response is what you expect
             if (response) {
                 // Update local book array with the updated book
@@ -214,35 +221,35 @@ export class DashboardComponent implements OnInit, OnDestroy {
                 if (index !== -1) {
                     this.book[index] = response; // Update with the response data
                 }
-                this.messageService.add({ 
-                    severity: 'success', 
-                    summary: 'Success', 
-                    detail: 'Book updated successfully!' 
+                this.messageService.add({
+                    severity: 'success',
+                    summary: 'Success',
+                    detail: 'Book updated successfully!'
                 });
             }
-        
+
             this.displayEditDialog = false; // Close the dialog
             this.fetchBooksData(); // Refresh the book data
-            
+
             this.messageService.add({ severity: 'success', summary: 'Location Found', detail: 'Location updated on map!' });
-        
-            
-            
+
+
+
         } catch (error) {
             console.error('Error updating book:', error);
-            this.messageService.add({ 
-                severity: 'error', 
-                summary: 'Error', 
-                detail: 'Failed to update book: ' + (error.message || 'Unknown error') 
+            this.messageService.add({
+                severity: 'error',
+                summary: 'Error',
+                detail: 'Failed to update book: ' + (error.message || 'Unknown error')
             });
         }
     }
-    
+
 
     proceedToEditMap() {
         this.editBookStage = 2;
     }
-    
+
     goBackToEditDetails() {
         this.editBookStage = 1;
     }
@@ -250,14 +257,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
     // updateBookWithLocation() {
     //     const mapInstance = document.getElementById('map-container');
     //     const selectedCoordinates = this.mapCommon.getCoordinatesFromAddress(this.searchQuery); // Implement the logic in this helper function
-    
+
     //     if (selectedCoordinates) {
     //         // Update the location property of the selected book
     //         this.selectedBook.location = this.convertCoordinatesToAddress(selectedCoordinates);
 
     //         // Call the editBook function with the updated book details
     //         this.editBook(this.selectedBook.id);
-    
+
     //         // Close the dialog and reset relevant properties
     //         this.displayEditDialog = false;
     //         this.editBookStage = 1; // Return to the first stage
@@ -272,7 +279,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.markerSet = false;
         this.searchQuery = '';
     }
-    
+
 
     getBookById(bookId: string): Observable<any> {
         return this.http.get(`${this.apiUrl}/books/${bookId}`);
@@ -280,14 +287,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     viewBookDetails(bookId: string) {
         this.getBookById(bookId).subscribe(
-          (response) => {
-            console.log('Book details:', response);
-            this.book = response; // Assign the fetched book details to the variable
-            this.displayDetailDialog = true; // Show the dialog
-          },
-          (error) => {
-            console.error('Error fetching book details:', error);
-          }
+            (response) => {
+                console.log('Book details:', response);
+                this.book = response; // Assign the fetched book details to the variable
+                this.displayDetailDialog = true; // Show the dialog
+            },
+            (error) => {
+                console.error('Error fetching book details:', error);
+            }
         );
     }
 
@@ -300,8 +307,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.selectedBook = { ...book }; // Create a copy of the book object to edit
         this.displayEditDialog = true; // Show the edit dialog
     }
-    
-    openViewDialog(book:any) {
+
+    openViewDialog(book: any) {
         this.selectedBook = { ...book };
         this.displayDetailDialog = true;
     }
@@ -314,8 +321,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     async saveUserInfo() {
         try {
-            
-            console.log(this.editableUser);
             this.http.put(`${this.apiUrl}/update-user`, this.editableUser).toPromise();
             this.messageService.add({ severity: 'success', summary: 'Success', detail: 'User updated successfully!' });
 
@@ -330,13 +335,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
         } catch {
 
         }
-        
 
 
-      }
+
+    }
 
 
-    
+
     // Method to move to map stage
     proceedToMap() {
         if (this.isFormValid()) {
@@ -386,32 +391,132 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     searchLocation(): void {
         if (this.searchQuery) {
-          this.mapCommon.goToAddress(this.searchQuery);
+            this.mapCommon.goToAddress(this.searchQuery);
         }
     }
 
     toggleMarker(): void {
         if (!this.searchQuery.trim()) {
-          console.error('Please enter a valid address.');
-          return;
+            console.error('Please enter a valid address.');
+            return;
         }
-    
-        if (this.markerSet) {
-          // Remove the marker
-          this.mapCommon.removeMarker(this.searchQuery);
-          this.markerSet = false;
-        } else {
-          // Set the marker
-          this.mapCommon.setMarkerAtAddress(this.searchQuery);
-          this.markerSet = true;
-        }
-      }
 
+        if (this.markerSet) {
+            // Remove the marker
+            this.mapCommon.removeMarker(this.searchQuery);
+            this.markerSet = false;
+        } else {
+            // Set the marker
+            this.mapCommon.setMarkerAtAddress(this.searchQuery);
+            this.markerSet = true;
+        }
+    }
+
+    onImageUpload(event: any): void {
+        this.selectedFile = event.target.files[0];
+        if (this.selectedFile) {
+            const reader = new FileReader();
+            reader.onload = (e: any) => {
+                this.previewImage = e.target.result;
+            };
+            reader.readAsDataURL(this.selectedFile);
+        } else {
+            this.previewImage = null;
+        }
+    }
+
+    onEditImageUpload(event: any): void {
+        this.selectedFile = event.target.files[0];
+        if (this.selectedFile) {
+            const reader = new FileReader();
+            reader.onload = (e: any) => {
+                this.editPreviewImage = e.target.result; // Update the preview image
+                this.selectedBook.image = this.selectedFile; // Store the file if needed
+            };
+            reader.readAsDataURL(this.selectedFile);
+        } else {
+            this.editPreviewImage = null;
+        }
+    }
+
+    uploadBookCover(bookId: string): void {
+        if (this.selectedFile) {
+
+            const formData = new FormData();
+            formData.append('image', this.selectedFile); // The selected file from the input
+            formData.append('bookId', bookId); // Pass the book ID for backend association
+        
+            // Send the data to your backend
+            this.http.post(`${this.apiUrl}/upload-cover`, formData).subscribe({
+                next: (response) => {
+                    console.log('Upload successful:', response);
+                    this.messageService.add({
+                        severity: 'success',
+                        summary: 'Success',
+                        detail: 'Book cover uploaded successfully!',
+                    });
+                },
+                error: (error) => {
+                    console.error('Upload failed:', error);
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Error',
+                        detail: 'Failed to upload book cover!',
+                    });
+                },
+            });
+        } else {
+            console.error('No file selected for upload!');
+            this.messageService.add({
+                severity: 'warn',
+                summary: 'Warning',
+                detail: 'Please select a file to upload!',
+            });
+        }
+    }
+    
+    
+    
+    updateBookCover(bookId: string): void {
+        if (this.selectedFile) {
+            const formData = new FormData();
+            formData.append('image', this.selectedFile); // The updated file from the input
+            formData.append('bookId', bookId); // Pass the book ID for backend association
+    
+            this.http.put(`${this.apiUrl}/update-cover/${bookId}`, formData).subscribe({
+                next: (response) => {
+                    console.log('Cover update successful:', response);
+                    this.messageService.add({
+                        severity: 'success',
+                        summary: 'Success',
+                        detail: 'Book cover updated successfully!',
+                    });
+                    this.fetchBooksData(); // Refresh the book data
+                },
+                error: (error) => {
+                    console.error('Failed to update book cover:', error);
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Error',
+                        detail: 'Failed to update book cover!',
+                    });
+                },
+            });
+        } else {
+            console.error('No file selected for upload!');
+            this.messageService.add({
+                severity: 'warn',
+                summary: 'Warning',
+                detail: 'Please select a file to update!',
+            });
+        }
+    }
+    
 
     showSuccess() {
         this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Book added successfully!' });
     }
-    
+
     showError() {
         this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to add book.' });
     }
