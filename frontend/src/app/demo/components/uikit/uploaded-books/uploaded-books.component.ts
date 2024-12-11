@@ -14,6 +14,7 @@ export class UploadedBooksComponent implements OnInit {
     @ViewChild(MapCommonComponent) mapCommon: MapCommonComponent;
 
     books: any[] = [];
+    similarityThreshold = 0.8;
     allBooks: any[] = [];
     genreOptions: SelectItem[] = [];
     apiUrl = environment.apiUrl;
@@ -45,34 +46,34 @@ export class UploadedBooksComponent implements OnInit {
                 .get<any[]>(`${this.apiUrl}/public_books`) // Adjust if you're fetching the books with an API call
                 .subscribe((data) => {
                     this.allBooks = data;
-    
+
                     // Map data to include book images and set books to allBooks initially
                     this.books = this.allBooks.map((book) => {
-                        console.log(book.image_name); // Log image name for debugging
+                        // console.log(book.image_name); // Log image name for debugging
                         book.image = `https://oztdufozgcxjfmmbyqtz.supabase.co/storage/v1/object/public/book_covers/${book.image_name}`;
                         return book;
                     });
-                    console.log(this.books); // Log mapped books for debugging
-    
+                    // console.log(this.books); // Log mapped books for debugging
+
                     this.updateGenreOptions();
                 });
         });
-    
+
         this.sortOptions = [
             { label: 'Title Ascending', value: 'title' },
             { label: 'Title Descending', value: '!title' },
         ];
-    
+
         // Initialize filter options
         this.filterByOptions = [
             { label: 'Title', value: 'title' },
             { label: 'Author', value: 'author' },
         ];
     }
-    
-    
-    
-    
+
+
+
+
 
     updateGenreOptions(): void {
         const genres = Array.from(
@@ -136,7 +137,7 @@ export class UploadedBooksComponent implements OnInit {
     onSearchCriterionChange($event): void {
         this.searchCriterion = $event.value;
         this.resetAdvancedSearch();
-        console.log('Selected Criterion:', this.searchCriterion);
+        // console.log('Selected Criterion:', this.searchCriterion);
     }
     onAdvancedSearchCriterionChange($event): void {
         this.advancedSearchCriterion = $event.value;
@@ -224,30 +225,47 @@ export class UploadedBooksComponent implements OnInit {
         }
     }
 
-    // Call the backend API to process the uploaded image and compare with the reference image (book2.jpg)
     uploadImageForComparison(file: File): void {
         const formData = new FormData();
         formData.append('image', file, file.name);
 
-        // Log the contents of formData manually
-        formData.forEach((value, key) => {
-            if (value instanceof File) {
-                console.log(`${key}: ${value.name}`);
-            } else {
-                console.log(`${key}: ${value}`);
-            }
-        });
+        // Add all image URLs from this.allBooks to the formData
+        const imageUrls = this.allBooks.map(book => book.image); // Extract all image URLs
+        formData.append('imageUrls', JSON.stringify(imageUrls)); // Convert to JSON string
 
-        // Call the backend API for comparison
-        this.http.post<any>(`${this.apiUrl}/compare-image`, formData).subscribe(
+        // Call Node.js API
+        this.http.post<any>(`${this.apiUrl}/compare-images`, formData).subscribe(
             (response) => {
-                // Store the comparison result to display in the UI
-                this.comparisonResult = response;
+                this.comparisonResult = response.comparisonResults; // Access the 'comparisonResults' key
+                console.log('Comparison Results:', this.comparisonResult);
+                this.filterBooksBySimilarity();
             },
             (error) => {
                 console.error('Image upload failed', error);
             }
         );
+    }
+
+    filterBooksBySimilarity() {
+        if (Array.isArray(this.comparisonResult)) { // Ensure comparisonResult is an array
+            this.books = this.books.filter((book) => {
+                // Find the comparison result for the current book using the URL
+                const comparison = this.comparisonResult.find(result => result.url === book.image);
+
+                if (comparison) {
+                    const phashSimilarity = comparison.phash_similarity;
+                    const levSimilarity = comparison.lev_similarity;
+
+                    console.log(comparison, ' ', phashSimilarity, ' ', levSimilarity);
+
+                    // Use either phashSimilarity, levSimilarity, or both for filtering
+                    return (phashSimilarity >= this.similarityThreshold && levSimilarity >= this.similarityThreshold);
+                }
+                return false; // If no comparison data is found, exclude the book
+            });
+        } else {
+            console.error('comparisonResult is not an array:', this.comparisonResult);
+        }
     }
 
 
