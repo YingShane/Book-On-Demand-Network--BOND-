@@ -755,7 +755,7 @@ app.post('/api/compare-image', upload.single('image'), async (req, res) => {
     }
 
     const filePath = req.file.path;
-    console.log('File saved to:', filePath); // Log the file path for debugging
+    // console.log('File saved to:', filePath); // Log the file path for debugging
 
     // Create a FormData object to send the image
     const formData = new FormData();
@@ -778,5 +778,42 @@ app.post('/api/compare-image', upload.single('image'), async (req, res) => {
   } catch (error) {
     console.error('Error in comparing images:', error);
     return res.status(500).json({ error: 'An error occurred while processing the image' });
+  }
+});
+
+app.post('/api/compare-images', upload.single('image'), async (req, res) => {
+  try {
+      const { file } = req;
+      const imageUrls = JSON.parse(req.body.imageUrls);
+
+      console.log(imageUrls)
+
+      if (!file) {
+          return res.status(400).send({ error: 'No file uploaded' });
+      }
+
+      if (!imageUrls || imageUrls.length === 0) {
+          return res.status(400).send({ error: 'No image URLs provided' });
+      }
+
+      // Prepare data for Flask
+      const formData = new FormData();
+      formData.append('file', fs.createReadStream(file.path)); // Send the image
+      formData.append('imageUrls', JSON.stringify(imageUrls)); // Add URLs
+
+      console.log(formData.getHeaders());
+      // Send request to Flask
+      const flaskResponse = await axios.post(flaskServerUrl, formData, {
+          headers: formData.getHeaders(),
+      });
+
+      // Cleanup uploaded file
+      fs.unlinkSync(file.path);
+
+      // Return Flask results to Angular
+      res.json(flaskResponse.data);
+  } catch (error) {
+      console.error('Error communicating with Flask:', error);
+      res.status(500).send({ error: 'Error comparing images' });
   }
 });
