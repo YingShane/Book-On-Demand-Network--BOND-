@@ -78,35 +78,7 @@ def calculate_levenshtein_similarity(text1, text2):
     return similarity, lev_distance
 
 # Main function to compare two images and their text
-def compare_two_images(image_path_1, image_path_2):
-    # Load the uploaded image and reference image
-    img1 = cv2.imread(image_path_1)
-    img2 = cv2.imread(image_path_2)
 
-    # Step 1: Extract text from both images
-    extracted_text_1, result_1 = extract_text(img1)
-    extracted_text_2, result_2 = extract_text(img2)
-
-    print(f"Extracted Text from Image 1: {', '.join(extracted_text_1)}")
-    print(f"Extracted Text from Image 2: {', '.join(extracted_text_2)}")
-
-    # Step 2: Annotate the images first
-    img1_with_annotations = annotate_image(img1, result_1)
-    img2_with_annotations = annotate_image(img2, result_2)
-
-    # Step 3: Compare images using pHash
-    phash_similarity, hash1, hash2 = compare_images_phash(img1, img2)
-    print(f"pHash Similarity: {phash_similarity:.2f}")
-
-    # Step 4: Calculate Levenshtein similarity (case insensitive)
-    lev_similarity, lev_distance = calculate_levenshtein_similarity(' '.join(extracted_text_1), ' '.join(extracted_text_2))
-    print(f"Levenshtein Similarity (case insensitive): {lev_similarity:.2f}")
-    print(f"Levenshtein Distance: {lev_distance}")
-
-    # Step 5: Visualize the images with annotations and pHash
-    visualize_phash(img1_with_annotations, img2_with_annotations, result_1, result_2)
-
-    return phash_similarity, lev_similarity, lev_distance
 
 # Function to visualize pHash
 def visualize_phash(img1, img2, result_1, result_2):
@@ -150,8 +122,9 @@ def visualize_phash(img1, img2, result_1, result_2):
     plt.show()
 
 # Example paths for the two images to compare
-image_path_1 = 'images/book1.jpg'  # First image (book cover)
-image_path_2 = 'images/book3.jpg'  # Second image (book cover)
+# image_path_1 = 'images/book1.jpg'  # First image (book cover)
+# image_path_2 = 'images/book3.jpg'  # Second image (book cover)
 
 # Run the comparison
 # phash_score, lev_score, lev_distance = compare_two_images(image_path_1, image_path_2)
+
