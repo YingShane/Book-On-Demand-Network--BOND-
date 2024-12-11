@@ -228,15 +228,17 @@ export class UploadedBooksComponent implements OnInit {
     uploadImageForComparison(file: File): void {
         const formData = new FormData();
         formData.append('image', file, file.name);
-
+    
         // Add all image URLs from this.allBooks to the formData
         const imageUrls = this.allBooks.map(book => book.image); // Extract all image URLs
+        console.log(imageUrls);
         formData.append('imageUrls', JSON.stringify(imageUrls)); // Convert to JSON string
-
+    
         // Call Node.js API
         this.http.post<any>(`${this.apiUrl}/compare-images`, formData).subscribe(
             (response) => {
-                this.comparisonResult = response.comparisonResults; // Access the 'comparisonResults' key
+                console.log(response); // Log the full response
+                this.comparisonResult = response; // Directly assign the array to comparisonResult
                 console.log('Comparison Results:', this.comparisonResult);
                 this.filterBooksBySimilarity();
             },
@@ -245,21 +247,22 @@ export class UploadedBooksComponent implements OnInit {
             }
         );
     }
-
+    
+    
     filterBooksBySimilarity() {
         if (Array.isArray(this.comparisonResult)) { // Ensure comparisonResult is an array
             this.books = this.books.filter((book) => {
                 // Find the comparison result for the current book using the URL
                 const comparison = this.comparisonResult.find(result => result.url === book.image);
-
+    
                 if (comparison) {
                     const phashSimilarity = comparison.phash_similarity;
                     const levSimilarity = comparison.lev_similarity;
-
+    
                     console.log(comparison, ' ', phashSimilarity, ' ', levSimilarity);
-
+    
                     // Use either phashSimilarity, levSimilarity, or both for filtering
-                    return (phashSimilarity >= this.similarityThreshold && levSimilarity >= this.similarityThreshold);
+                    return (phashSimilarity >= this.similarityThreshold || levSimilarity >= this.similarityThreshold);
                 }
                 return false; // If no comparison data is found, exclude the book
             });
@@ -267,6 +270,7 @@ export class UploadedBooksComponent implements OnInit {
             console.error('comparisonResult is not an array:', this.comparisonResult);
         }
     }
+    
 
 
 

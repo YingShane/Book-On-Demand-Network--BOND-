@@ -215,4 +215,3 @@ def compare_two_images(img1, img2):
 
 if __name__ == '__main__':
     app.run(debug=True, port=5001)  # Run Flask app on port 5001
-

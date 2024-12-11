@@ -127,4 +127,3 @@ def visualize_phash(img1, img2, result_1, result_2):
 
 # Run the comparison
 # phash_score, lev_score, lev_distance = compare_two_images(image_path_1, image_path_2)
-
