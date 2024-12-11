@@ -49,11 +49,10 @@ export class UploadedBooksComponent implements OnInit {
 
                     // Map data to include book images and set books to allBooks initially
                     this.books = this.allBooks.map((book) => {
-                        // console.log(book.image_name); // Log image name for debugging
+                        
                         book.image = `https://oztdufozgcxjfmmbyqtz.supabase.co/storage/v1/object/public/book_covers/${book.image_name}`;
                         return book;
                     });
-                    // console.log(this.books); // Log mapped books for debugging
 
                     this.updateGenreOptions();
                 });
@@ -137,7 +136,6 @@ export class UploadedBooksComponent implements OnInit {
     onSearchCriterionChange($event): void {
         this.searchCriterion = $event.value;
         this.resetAdvancedSearch();
-        // console.log('Selected Criterion:', this.searchCriterion);
     }
     onAdvancedSearchCriterionChange($event): void {
         this.advancedSearchCriterion = $event.value;
@@ -231,15 +229,13 @@ export class UploadedBooksComponent implements OnInit {
     
         // Add all image URLs from this.allBooks to the formData
         const imageUrls = this.allBooks.map(book => book.image); // Extract all image URLs
-        console.log(imageUrls);
         formData.append('imageUrls', JSON.stringify(imageUrls)); // Convert to JSON string
     
         // Call Node.js API
         this.http.post<any>(`${this.apiUrl}/compare-images`, formData).subscribe(
             (response) => {
-                console.log(response); // Log the full response
                 this.comparisonResult = response; // Directly assign the array to comparisonResult
-                console.log('Comparison Results:', this.comparisonResult);
+                
                 this.filterBooksBySimilarity();
             },
             (error) => {
@@ -258,8 +254,6 @@ export class UploadedBooksComponent implements OnInit {
                 if (comparison) {
                     const phashSimilarity = comparison.phash_similarity;
                     const levSimilarity = comparison.lev_similarity;
-    
-                    console.log(comparison, ' ', phashSimilarity, ' ', levSimilarity);
     
                     // Use either phashSimilarity, levSimilarity, or both for filtering
                     return (phashSimilarity >= this.similarityThreshold || levSimilarity >= this.similarityThreshold);
