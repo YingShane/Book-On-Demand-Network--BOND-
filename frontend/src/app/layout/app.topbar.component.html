@@ -13,6 +13,11 @@
     </button>
 
     <div #topbarmenu class="layout-topbar-menu" [ngClass]="{'layout-topbar-menu-mobile-active': layoutService.state.profileSidebarVisible}">
+        <!-- Notification Bell -->
+        <button class="p-link layout-topbar-button" (click)="onNotificationClick()">
+            <i class="pi pi-bell"></i>
+            <span>Notifications</span>
+        </button>
         <button class="p-link layout-topbar-button">
             <i class="pi pi-calendar"></i>
             <span>Calendar</span>
@@ -26,17 +31,16 @@
             <span>Settings</span>
         </button>
         <button class="p-link layout-topbar-button" (click)="logout()">
-            <i class="pi pi-sign-out"></i> <!-- You can change this icon based on your preferences -->
+            <i class="pi pi-sign-out"></i>
             <span>Logout</span>
         </button>
     </div>
 
     <!-- Search Bar Centered -->
     <div class="layout-topbar-search">
-        <input type="text"placeholder="Search..." class="p-inputtext">
+        <input type="text" placeholder="Search..." class="p-inputtext">
         <button class="p-button p-button-success">
             <i class="pi pi-search"></i>
         </button>
     </div>
 </div>
-

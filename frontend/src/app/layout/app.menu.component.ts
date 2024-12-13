@@ -23,7 +23,7 @@ export class AppMenuComponent implements OnInit {
             {
                 label: 'UI Components',
                 items: [
-                    { label: 'Form Layout', icon: 'pi pi-fw pi-id-card', routerLink: ['/uikit/formlayout'] },
+                    { label: 'Borrowed Books', icon: 'pi pi-fw pi-id-card', routerLink: ['/uikit/borrowed-books'] },
                     { label: 'User Info', icon: 'pi pi-fw pi-id-card', routerLink: ['/add-user-info'] },
                     { label: 'Nearby Users', icon: 'pi pi-fw pi-id-card', routerLink: ['/map-common'] },
                     { label: 'Uploaded Books', icon: 'pi pi-fw pi-check-square', routerLink: ['/uikit/uploaded-books'] },

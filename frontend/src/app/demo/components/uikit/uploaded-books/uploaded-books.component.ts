@@ -4,6 +4,8 @@ import { environment } from '../../../../../environments/environment';
 import { MessageService, SelectItem } from 'primeng/api';
 import { MapCommonComponent } from 'src/app/map-common/map-common.component';
 import { ActivatedRoute } from '@angular/router';
+import { Observable } from 'rxjs';
+
 
 @Component({
     templateUrl: './uploaded-books.component.html',
@@ -37,7 +39,7 @@ export class UploadedBooksComponent implements OnInit {
     advancedSearchCriterion: string = 'title'; // Default criterion for advanced search
     filterByOptions: SelectItem[] = []; // Options for filtering (Author or Title)
 
-    constructor(private http: HttpClient, private route: ActivatedRoute) { }
+    constructor(private http: HttpClient, private route: ActivatedRoute, private messageService: MessageService) { }
 
     ngOnInit(): void {
         this.route.paramMap.subscribe((params) => {
@@ -49,7 +51,7 @@ export class UploadedBooksComponent implements OnInit {
 
                     // Map data to include book images and set books to allBooks initially
                     this.books = this.allBooks.map((book) => {
-                        
+
                         book.image = `https://oztdufozgcxjfmmbyqtz.supabase.co/storage/v1/object/public/book_covers/${book.image_name}`;
                         return book;
                     });
@@ -69,9 +71,6 @@ export class UploadedBooksComponent implements OnInit {
             { label: 'Author', value: 'author' },
         ];
     }
-
-
-
 
 
     updateGenreOptions(): void {
@@ -226,16 +225,16 @@ export class UploadedBooksComponent implements OnInit {
     uploadImageForComparison(file: File): void {
         const formData = new FormData();
         formData.append('image', file, file.name);
-    
+
         // Add all image URLs from this.allBooks to the formData
         const imageUrls = this.allBooks.map(book => book.image); // Extract all image URLs
         formData.append('imageUrls', JSON.stringify(imageUrls)); // Convert to JSON string
-    
+
         // Call Node.js API
         this.http.post<any>(`${this.apiUrl}/compare-images`, formData).subscribe(
             (response) => {
                 this.comparisonResult = response; // Directly assign the array to comparisonResult
-                
+
                 this.filterBooksBySimilarity();
             },
             (error) => {
@@ -243,18 +242,18 @@ export class UploadedBooksComponent implements OnInit {
             }
         );
     }
-    
-    
+
+
     filterBooksBySimilarity() {
         if (Array.isArray(this.comparisonResult)) { // Ensure comparisonResult is an array
             this.books = this.books.filter((book) => {
                 // Find the comparison result for the current book using the URL
                 const comparison = this.comparisonResult.find(result => result.url === book.image);
-    
+
                 if (comparison) {
                     const phashSimilarity = comparison.phash_similarity;
                     const levSimilarity = comparison.lev_similarity;
-    
+
                     // Use either phashSimilarity, levSimilarity, or both for filtering
                     return (phashSimilarity >= this.similarityThreshold || levSimilarity >= this.similarityThreshold);
                 }
@@ -264,7 +263,24 @@ export class UploadedBooksComponent implements OnInit {
             console.error('comparisonResult is not an array:', this.comparisonResult);
         }
     }
-    
+
+
+
+    createBorrowTicket(userId: string, book: any): Observable<any> {
+        return this.http.post<any>(`${this.apiUrl}/sendMail`, { userId, book });
+    }
+
+
+    borrowBook(book: any): void {
+        // Call backend service to handle borrowing logic (sending data to Node.js)
+        this.createBorrowTicket(book.user_id, book).subscribe(response => {
+            if (response.success) {
+                alert('Borrow request sent!');
+            } else {
+                alert('Error processing borrow request.');
+            }
+        });
+    }
 
 
 

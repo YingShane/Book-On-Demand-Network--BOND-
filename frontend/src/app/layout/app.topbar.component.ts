@@ -6,33 +6,39 @@ import { Router } from '@angular/router';
 import { environment } from '../../environments/environment';
 
 @Component({
-    selector: 'app-topbar',
-    templateUrl: './app.topbar.component.html'
+  selector: 'app-topbar',
+  templateUrl: './app.topbar.component.html'
 })
 export class AppTopBarComponent {
 
-    items!: MenuItem[];
-    apiUrl = environment.apiUrl;
+  items!: MenuItem[];
+  apiUrl = environment.apiUrl;
 
-    @ViewChild('menubutton') menuButton!: ElementRef;
+  @ViewChild('menubutton') menuButton!: ElementRef;
 
-    @ViewChild('topbarmenubutton') topbarMenuButton!: ElementRef;
+  @ViewChild('topbarmenubutton') topbarMenuButton!: ElementRef;
 
-    @ViewChild('topbarmenu') menu!: ElementRef;
+  @ViewChild('topbarmenu') menu!: ElementRef;
 
-    constructor(public layoutService: LayoutService, private http: HttpClient, private router: Router) { }
-    
-    logout() {
-        this.http.post(`${this.apiUrl}/logout`, {}).subscribe(
-          response => {
-            console.log('Logout successful', response);
-            // Optionally, clear any local storage or tokens
-            // localStorage.removeItem('user'); // If applicable
-            this.router.navigate(['auth/login']); // Redirect to login after logout
-          },
-          error => {
-            console.error('Logout error', error);
-          }
-        );
+  constructor(public layoutService: LayoutService, private http: HttpClient, private router: Router) { }
+
+  logout() {
+    this.http.post(`${this.apiUrl}/logout`, {}).subscribe(
+      response => {
+        console.log('Logout successful', response);
+        // Optionally, clear any local storage or tokens
+        // localStorage.removeItem('user'); // If applicable
+        this.router.navigate(['auth/login']); // Redirect to login after logout
+      },
+      error => {
+        console.error('Logout error', error);
       }
+    );
+  }
+
+  onNotificationClick() {
+    console.log('Notification bell clicked');
+    // Add logic to display notifications or open a dropdown/panel
+  }
+
 }
